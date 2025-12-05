@@ -108,7 +108,7 @@ def label_kaggle2(llm_client: LLM):
 
     Provide scores as you were instructed.
         """
-        path = "./Hands_kaggle2/FEMALE/" + file
+        path = file
         imagedata = local_image_to_data_url(path)
 
         scores = llm_client.get_LLM_output(user_prompt=user_prompt, image_data=imagedata)
@@ -152,7 +152,7 @@ def label_kaggle2(llm_client: LLM):
 
     Provide scores as you were instructed.
         """
-        path = "./Hands_kaggle2/MALE/" + file
+        path = file
         imagedata = local_image_to_data_url(path)
 
         scores = llm_client.get_LLM_output(user_prompt=user_prompt, image_data=imagedata)
