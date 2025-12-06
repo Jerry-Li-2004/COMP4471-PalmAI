@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palm.AI - Hand Analysis</title>
+    <style>
+        :root {
+            --color-primary: #32a8c6;
+            --color-primary-hover: #2a96b0;
+            --color-bg: #0f1419;
+            --color-surface: #1a1f27;
+            --color-surface-light: #25303e;
+            --color-text: #e8eaed;
+            --color-text-secondary: #b0b3b8;
+            --color-accent-gold: #c9a961;
+            --color-accent-purple: #8b5cf6;
+            --color-success: #10b981;
+            --color-error: #ef4444;
+            --color-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg) 0%, #1a2332 100%);
+            color: var(--color-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--color-accent-gold) 0%, var(--color-accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+        }
+
+        .header-subtitle {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Main layout */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Upload section */
+        .upload-section {
+            background: var(--color-surface);
+            border: 2px dashed var(--color-border);
+            border-radius: 16px;
+            padding: 50px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            border-color: var(--color-primary);
+            background: rgba(50, 168, 198, 0.05);
+        }
+
+        .upload-section.dragover {
+            border-color: var(--color-primary);
+            background: rgba(50, 168, 198, 0.1);
+        }
+
+        .upload-icon-svg {
+            margin-bottom: 20px;
+            opacity: 0.8;
+            color: var(--color-text-secondary);
+            width: 64px;
+            height: 64px;
+        }
+
+        .upload-text {
+            margin-bottom: 10px;
+        }
+
+        .upload-text h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+
+        .upload-text p {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        .upload-hint {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 3px solid var(--color-accent-purple);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 13px;
+            color: var(--color-text-secondary);
+        }
+
+        .upload-hint strong {
+            color: var(--color-accent-purple);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn-upload {
+            margin-top: 24px;
+            padding: 12px 32px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-upload:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-upload:active {
+            transform: translateY(0);
+        }
+
+        /* Preview section */
+        .preview-section {
+            display: none;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .image-preview-container {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 450px;
+            object-fit: contain;
+            background: linear-gradient(135deg, rgba(50, 168, 198, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-analyze {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-analyze:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn-analyze:disabled {
+            background: var(--color-text-secondary);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: var(--color-surface-light);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Results section */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            margin-bottom: 24px;
+        }
+
+        .result-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--color-accent-gold) 0%, var(--color-accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .result-subtitle {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        .results-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .scores-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .scores-table {
+            background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-light) 100%);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.3s ease;
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .table-row:hover {
+            background: rgba(50, 168, 198, 0.05);
+        }
+
+        .table-row-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-row-score {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 120px;
+        }
+
+        .score-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color-accent-gold);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .mini-progress {
+            width: 60px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent-purple) 100%);
+            transition: width 0.6s ease;
+        }
+
+        .analysis-section {
+            background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-light) 100%);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .analysis-section h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color-accent-gold);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analysis-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .analysis-item {
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .analysis-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .analysis-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-accent-purple);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .analysis-text {
+            color: var(--color-text-secondary);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* Loading state */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(50, 168, 198, 0.3);
+            border-top: 4px solid var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .upload-section {
+                padding: 30px 20px;
+            }
+
+            .upload-icon {
+                font-size: 40px;
+            }
+
+            .result-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .image-preview {
+                height: 300px;
+            }
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--color-error);
+            color: #fca5a5;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--color-success);
+            color: #86efac;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div>
+                    <div class="logo">
+                        Palm.AI
+                    </div>
+                    <div class="header-subtitle">AI-Powered Hand Analysis</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left: Upload & Preview -->
+            <div>
+                <div class="upload-section" id="uploadArea">
+                    <svg class="upload-icon-svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <div class="upload-text">
+                        <h2>Upload Your Hand Photo</h2>
+                        <p>Drag and drop or click to select</p>
+                    </div>
+                    <div class="upload-hint">
+                        <strong>💡 Tips for best results:</strong>
+                        Clear lighting, flat hand surface, all fingers visible, fingers slightly spread
+                    </div>
+                    <button class="btn-upload" id="uploadBtn">Choose Image</button>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+
+                <!-- Preview Section -->
+                <div class="preview-section" id="previewSection">
+                    <div class="image-preview-container">
+                        <img id="previewImage" class="image-preview" alt="Preview">
+                    </div>
+                    <div class="preview-actions">
+                        <button class="btn btn-analyze" id="analyzeBtn">Analyze Hand</button>
+                        <button class="btn btn-cancel" id="cancelBtn">Change Image</button>
+                    </div>
+                </div>
+
+                <!-- Loading Section -->
+                <div class="loading" id="loadingSection">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Analyzing your hand... This may take a moment</div>
+                </div>
+            </div>
+
+            <!-- Right: Results -->
+            <div>
+                <div class="results-section" id="resultsSection">
+                    <div class="result-header">
+                        <div class="result-title">Analysis Results</div>
+                        <div class="result-subtitle">Based on your palm characteristics</div>
+                    </div>
+                    <div id="messageContainer"></div>
+                    <div class="results-content">
+                        <div class="scores-section" id="scoresContainer"></div>
+                        <div class="analysis-section" id="analysisContainer"></div>
+                    </div>
+                    <button class="btn btn-cancel" id="resetBtn" style="margin-top: 20px; width: 100%;">Analyze Another Hand</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const previewImage = document.getElementById('previewImage');
+        const previewSection = document.getElementById('previewSection');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const resetBtn = document.getElementById('resetBtn');
+        const scoresContainer = document.getElementById('scoresContainer');
+        const analysisContainer = document.getElementById('analysisContainer');
+        const messageContainer = document.getElementById('messageContainer');
+
+        let selectedFile = null;
+        let analysisInProgress = false;
+
+        // Upload button click
+        uploadBtn.addEventListener('click', () => fileInput.click());
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelect(e.target.files[0]);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showError('Please select a valid image file');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                showError('Image size must be less than 10MB');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                uploadArea.style.display = 'none';
+                previewSection.classList.add('active');
+                messageContainer.innerHTML = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Analyze button
+        analyzeBtn.addEventListener('click', async () => {
+            if (analysisInProgress) return;
+            
+            analysisInProgress = true;
+            analyzeBtn.disabled = true;
+            previewSection.classList.remove('active');
+            loadingSection.classList.add('active');
+            resultsSection.classList.remove('active');
+
+            try {
+                // Simulate API call with timeout
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Call your backend API here
+                // const formData = new FormData();
+                // formData.append('image', selectedFile);
+                // const response = await fetch('/api/analyze-palm', {
+                //     method: 'POST',
+                //     body: formData
+                // });
+                // const data = await response.json();
+
+                // Mock data for demonstration
+                const mockData = generateMockAnalysis();
+
+                displayResults(mockData);
+            } catch (error) {
+                showError('Analysis failed. Please try again.');
+                console.error('Error:', error);
+            } finally {
+                analysisInProgress = false;
+                analyzeBtn.disabled = false;
+                loadingSection.classList.remove('active');
+            }
+        });
+
+        // Cancel button
+        cancelBtn.addEventListener('click', resetUI);
+
+        // Reset button
+        resetBtn.addEventListener('click', resetUI);
+
+        function resetUI() {
+            selectedFile = null;
+            fileInput.value = '';
+            previewImage.src = '';
+            uploadArea.style.display = 'block';
+            previewSection.classList.remove('active');
+            resultsSection.classList.remove('active');
+            loadingSection.classList.remove('active');
+            messageContainer.innerHTML = '';
+        }
+
+        function generateMockAnalysis() {
+            return {
+                status: 'success',
+                data: {
+                    personality: {
+                        title: '👤 Personality',
+                        description: 'You are naturally intuitive and creative. Your balanced palm lines suggest good emotional stability and adaptability.',
+                        confidence: 87
+                    },
+                    career: {
+                        title: '💼 Career Potential',
+                        description: 'Strong life line indicates perseverance and determination. Well-suited for leadership roles and independent ventures.',
+                        confidence: 82
+                    },
+                    relationships: {
+                        title: '❤️ Relationships',
+                        description: 'Prominent heart line shows strong emotional capacity. You value deep connections and loyalty in relationships.',
+                        confidence: 79
+                    },
+                    health: {
+                        title: '🏥 Wellness',
+                        description: 'Overall indicators suggest good vitality and energy. Regular exercise and balance will support long-term wellness.',
+                        confidence: 75
+                    },
+                    destiny: {
+                        title: '✨ Life Path',
+                        description: 'Fate line suggests you are destined for meaningful achievements. Trust your instincts and pursue your passions.',
+                        confidence: 88
+                    },
+                    strengths: {
+                        title: '⭐ Key Strengths',
+                        description: 'Intuition, creativity, resilience, emotional intelligence, and natural leadership abilities.',
+                        confidence: 90
+                    }
+                }
+            };
+        }
+
+        const iconMap = {
+            '👤': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>',
+            '💼': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path></svg>',
+            '❤️': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
+            '🏥': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+            '✨': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="12 2 15.09 8.26 22 9.09 17 14.08 18.18 21.02 12 17.77 5.82 21.02 7 14.08 2 9.09 8.91 8.26 12 2"></polygon></svg>',
+            '⭐': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.09 17 14.08 18.18 21.02 12 17.77 5.82 21.02 7 14.08 2 9.09 8.91 8.26 12 2"></polygon></svg>'
+        };
+
+        function displayResults(data) {
+            if (data.status !== 'success') {
+                showError('Unable to complete analysis. Please try again.');
+                resetUI();
+                return;
+            }
+
+            showSuccess('Analysis complete! Here are your insights.');
+            scoresContainer.innerHTML = '';
+            analysisContainer.innerHTML = '';
+
+            // Build scores table
+            const scoresTable = document.createElement('div');
+            scoresTable.className = 'scores-table';
+
+            Object.values(data.data).forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                const emoji = item.title.match(/[\p{Emoji}]/u)?.[0] || '•';
+                const icon = iconMap[emoji] || `<span>${emoji}</span>`;
+                row.innerHTML = `
+                    <div class="table-row-label"><span style="display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; color: var(--color-accent-gold);">${icon}</span> ${item.title.split(' ')[1]}</div>
+                    <div class="table-row-score">
+                        <div class="score-value">${item.confidence}%</div>
+                        <div class="mini-progress">
+                            <div class="mini-progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                `;
+                scoresTable.appendChild(row);
+
+                // Animate mini progress bar
+                setTimeout(() => {
+                    const fill = row.querySelector('.mini-progress-fill');
+                    fill.style.width = item.confidence + '%';
+                }, 100);
+            });
+
+            scoresContainer.appendChild(scoresTable);
+
+            // Build analysis section
+            analysisContainer.innerHTML = '<h3>Detailed Analysis</h3>';
+            const analysisContent = document.createElement('div');
+            analysisContent.className = 'analysis-content';
+
+            Object.values(data.data).forEach(item => {
+                const analysisItem = document.createElement('div');
+                analysisItem.className = 'analysis-item';
+                const emoji = item.title.match(/[\p{Emoji}]/u)?.[0] || '•';
+                const icon = iconMap[emoji] || `<span>${emoji}</span>`;
+                analysisItem.innerHTML = `
+                    <div class="analysis-title"><span style="display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; color: var(--color-accent-purple);">${icon}</span> ${item.title.split(' ').slice(1).join(' ')}</div>
+                    <div class="analysis-text">${item.description}</div>
+                `;
+                analysisContent.appendChild(analysisItem);
+            });
+
+            analysisContainer.appendChild(analysisContent);
+
+            loadingSection.classList.remove('active');
+            resultsSection.classList.add('active');
+        }
+
+        function showError(message) {
+            messageContainer.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
+        }
+
+        function showSuccess(message) {
+            messageContainer.innerHTML = `<div class="success-message">✓ ${message}</div>`;
+        }
+    </script>
+</body>
+</html>
