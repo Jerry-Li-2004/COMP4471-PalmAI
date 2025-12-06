@@ -41,30 +41,6 @@ Palm lines of interest include the *Life Line*, the *Heart Line*, the *Fate Line
 These lines represent respectively, *enthusiasm and strength*, *romantic life*, *fortune and luck*, and *smartness and potential*.
 You are to read these lines in detail, and to provide insights in the form of scores.
 
-### Heart Line
-- Begins below the index finger = content with love life
-- Begins below the middle finger = selfish when it comes to love
-- Begins in-between the middle and index fingers = caring and understanding
-- Is straight and short = less interest in romance
-- Touches life line = heart is broken easily
-- Is long and curvy = freely expresses emotions and feelings
-- Is straight and parallel to the head line = good handle on emotions
-- Is wavy = many relationships, absence of serious relationships
-- Circle on the line = sad or depressed
-- Broken line = emotional trauma
-
-### Head Line
-- Short line = prefers physical achievements over mental ones
-- Curved, sloping line = creativity
-- Curves downward = inclination towards literature and fantasy
-- Curves upwards towards little finger = aptitude for math, business, and logic
-- Separated from life line = adventure, enthusiasm for life
-- Wavy line = short attention span
-- Deep, long line = thinking is clear and focused
-- Straight line = thinks realistically
-- Broken head line = inconsistencies in thought or has varying interests
-- Multiple crosses through head line = momentous decisions
-
 ### Life Line
 - Runs close to thumb = often tired
 - Curves completely around the thumb = good physical and mental health
@@ -85,6 +61,18 @@ You are to read these lines in detail, and to provide insights in the form of sc
 - Break in line = sudden change of lifestyle
 - No line = nervous
 
+### Heart Line
+- Begins below the index finger = content with love life
+- Begins below the middle finger = selfish when it comes to love
+- Begins in-between the middle and index fingers = caring and understanding
+- Is straight and short = less interest in romance
+- Touches life line = heart is broken easily
+- Is long and curvy = freely expresses emotions and feelings
+- Is straight and parallel to the head line = good handle on emotions
+- Is wavy = many relationships, absence of serious relationships
+- Circle on the line = sad or depressed
+- Broken line = emotional trauma
+
 ### Fate Line
 - Deep line = strongly controlled by fate
 - Unbroken and runs straight across = successful life ahead
@@ -94,6 +82,18 @@ You are to read these lines in detail, and to provide insights in the form of sc
 - Joins with life line somewhere in the middle = signifies a point at which one’s interests must be surrendered to those of others
 - Starts at base of thumb and crosses life line = support offered by family and friends
 - No line = comfortable but uneventful life ahead
+
+### Head Line
+- Short line = prefers physical achievements over mental ones
+- Curved, sloping line = creativity
+- Curves downward = inclination towards literature and fantasy
+- Curves upwards towards little finger = aptitude for math, business, and logic
+- Separated from life line = adventure, enthusiasm for life
+- Wavy line = short attention span
+- Deep, long line = thinking is clear and focused
+- Straight line = thinks realistically
+- Broken head line = inconsistencies in thought or has varying interests
+- Multiple crosses through head line = momentous decisions
 
 ## Scoring Instructions
 Provide scores for the user for `strength`, `romantic`, `luck`, and `potential`.
