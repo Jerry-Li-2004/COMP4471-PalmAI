@@ -4,6 +4,13 @@ from labelling_scores.llm import LLM as LLM
 
 class LLM_Inference(LLM):
 
+    def __init__(self):
+        """
+        Sets up an instance of the LLM_Inference class by configuring the LLM client in the superclass.
+        """
+        super.__init__()
+        
+
     def _get_sys_prompt(self):
         """
         Provides an easy way to obtain the system prompt using methods in this class.
