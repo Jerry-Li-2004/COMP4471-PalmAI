@@ -1,0 +1,10 @@
+\section{Evaluation Target}
+\label{sec:evaluation}
+
+We evaluate our model on the following metrics targetting different components of our pipeline.
+
+\begin{itemize}
+    \item \textbf{Palm Line Detection}: We set the baseline for palm line detection at $\geq 0.85$ for mean Intersection over Union (mIoU); and an F1 score of $\geq 0.9$ on a test set.
+    \item \textbf{Scoring System}: We align the scores $S_{\text{rule}}$ and $S_{\text{NN}}$ from our rule-based scoring and neural network, and aim for a mean squared error (MSE) of $\leq 0.15$.
+    \item \textbf{LLM Inference Quality}: We employ the LLM-as-judge technique, and use a large language model to label text inference as `Pass` or `Fail`. We aim to have at least 90\% of outputs achieving `Pass`.
+\end{itemize}

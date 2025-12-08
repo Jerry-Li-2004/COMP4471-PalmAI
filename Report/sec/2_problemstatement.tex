@@ -1,0 +1,62 @@
+\section{Problem Formulation}
+\label{sec:problem}
+
+\subsection{Four Primary Lines for Palm Line Analysis}
+Palm line analysis is an ancient practice that interprets the lines on the palm of the hand to glean insights into an individual's personality traits, emotional tendencies, and life experiences.
+The four primary lines—Heart, Head, Life, and Fate—are central to this practice, each offering unique perspectives into various aspects of human life.
+All of our following tasks resolving these four lines~\cite{palmreading}:
+
+\begin{itemize}
+    \item \textbf{Heart Line}: Positioned at the top of the palm, the Heart Line is believed to reflect emotional stability, romantic perspectives, and cardiac health. 
+    \item \textbf{Head Line}: Running horizontally across the palm, the Head Line represents intellectualism, learning style, and communication abilities. 
+    \item \textbf{Life Line}: Encircling the thumb, the Life Line is traditionally associated with physical health, general well-being, and major life changes. 
+    \item \textbf{Fate Line}: Often running vertically from the base of the palm, the Fate Line indicates the degree to which external circumstances influence an individual's life path. 
+\end{itemize}
+
+\begin{figure}[t]
+  \centering
+   \includegraphics[width=0.4\linewidth]{Images/palmlines.png}
+
+   \caption{Different palm lines.}
+   \label{fig:onecol}
+\end{figure}
+
+Therefore, one of our primary objectives is to successfully segment these primary palm lines. 
+Achieving precise segmentation is essential before we can undertake further analytical tasks. 
+This foundational step ensures that subsequent analysis will be based on accurate and distinct representations of each line.
+
+
+\subsection{Feature Extraction and Text Decoder}
+Following the segmentation of the palm lines, a critical subsequent step involves utilizing a text decoder to meticulously analyze the shapes and other significant characteristics that may influence the analysis. 
+This detailed examination is essential before the data is passed to a large language model for comprehensive interpretation and final analysis.
+
+% \begin{figure}[t]
+%   \centering
+%     \fbox{\rule{0pt}{2in} \rule{0.9\linewidth}{0pt}}
+%    % \includegraphics[width=0.4\linewidth]{sec/palmlines.png}
+
+%    \caption{An example of text output from the text decoder.}
+%    \label{fig:onecol}
+% \end{figure}
+
+
+\subsection{Quantified Reasoning}
+To enhance the reasoning process and mitigate any uncertainties, it is essential to implement a scoring system for the features identified in the palm lines. 
+This scoring will assess various attributes, such as indicators of luck, health, and other relevant characteristics. 
+By quantifying these features, we can provide a more structured and objective analysis that informs subsequent interpretations and enhances the overall reliability of the insights derived from the palm analysis.
+
+
+\subsection{Final Analysis}
+After obtaining scores for various attributes and elaborating on the text descriptions of the palm lines, the final and critical step is to generate a comprehensive, user-friendly analysis. 
+This task will be accomplished using a large language model (LLM), which will synthesize the scores and textual insights into a coherent narrative. 
+The LLM will provide an accessible interpretation of the analysis, enabling users to easily understand the implications of the palm features concerning aspects such as luck, health, and personal insights. 
+By leveraging the capabilities of the LLM, we aim to deliver a polished and informative report that enhances the user experience and facilitates deeper engagement with the results of the palm analysis.
+
+% \begin{figure}[t]
+%   \centering
+%     \fbox{\rule{0pt}{2in} \rule{0.9\linewidth}{0pt}}
+%    % \includegraphics[width=0.4\linewidth]{sec/palmlines.png}
+
+%    \caption{An example of the final analysis.}
+%    \label{fig:onecol}
+% \end{figure}

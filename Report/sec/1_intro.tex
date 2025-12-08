@@ -1,0 +1,19 @@
+\section{Introduction}
+\label{sec:intro}
+
+Fortune-telling through palm reading, known as palmistry, has been practiced for centuries. 
+However, such methods lack scientific support and are regarded by many as pseudoscience. 
+There is also a lack of evidence for the connection between palm line features and the predictions stemming from this form of fortune-telling.
+
+In the age of machine learning, large datasets can be leveraged along with machine learning techniques, such as deep neural networks, to uncover hidden characteristics and connections that were previously difficult to observe.
+Under this predicate, we propose that there may be statistical connections between palm features and palmistry fortune-telling results.
+
+We construct a full pipeline to predict scores for aspects of the user’s life, such as character, emotional predispositions, health status, and life path.
+Our pipeline is composed of the following components.
+
+\begin{itemize}
+    \item \textbf{Vision Transformer (ViT)}: A vision transformer serves to extract features to vector embeddings that encode geometric features of palm lines in the input image.
+    \item \textbf{Text decoder}: We use a text decoder to generate factual descriptions of the user’s palm lines in natural language from the embeddings produced by the vision transformer.
+    \item \textbf{Scoring system}: We score different aspects of life by examining the geometric features of the detected palm lines, using a neural network.
+    \item \textbf{LLM inference}: We produce, from the description of palm lines and scores, a report in natural language that outputs fortune-telling content.
+\end{itemize}

@@ -1,0 +1,64 @@
+\section{Dataset Design}
+\label{sec:dataset}
+
+\subsection{Data Origin and Characteristics}
+The data utilized in this study is purely based on images of hands, sourced from the Kaggle dataset titled "Human Palm Images."~\cite{kagglehands}
+To ensure a diverse and representative dataset, we selected images that capture an overhead view of hands, which aligns with our objective of scanning users' hands effectively. 
+The dataset is well-balanced, encompassing both left and right hands, as well as involving both male and female images of 400 each. 
+This careful selection aims to mitigate potential biases and ethical concerns associated with dataset representation. 
+By prioritizing diversity in our dataset, we strive to prevent discriminatory practices and ensure that our findings are applicable across different demographics. 
+This approach not only enhances the robustness of our analysis but also upholds ethical standards in research.
+
+\subsection{Data Preprocessing}
+The data preprocessing pipeline for our AI application involves several critical steps to enhance the quality of the input images and prepare them for effective analysis.
+We perform the following operations on the dataset.
+
+\subsubsection{Background Extraction}
+We isolate the palm from the surrounding background in an image. By effectively removing the background, we ensure that the model focuses exclusively on the palm, which leads to more accurate segmentation.
+We assume that the images are simple and there is no occlusion of our target objects.
+
+\subsubsection{Transformation to Grayscale}
+Grayscale conversion is the process of transforming a color image into a single-channel format that represents varying shades of gray. 
+This technique simplifies the complexity of the image by reducing it from three color channels (RGB) to one, making it easier to process~\cite{Parulan2024-qo}. 
+In the context of palm segmentation, grayscale images enhance the visibility of edges and contours while eliminating color distractions that may not be relevant to the task. 
+By focusing solely on intensity values, we can better highlight the structural features of the palm, which is essential for accurately identifying and isolating it from the hand.
+
+\subsubsection{Histogram of Oriented Gradients (HOG)}
+The Histogram of Oriented Gradients (HOG) is a feature descriptor that captures the distribution of gradient orientations within localized regions of the image. 
+By dividing the image into small cells and computing histograms of gradient directions, HOG provides a robust representation of the palm's shape and structure~\cite{Parulan2024-qo}. 
+This technique is beneficial for palm segmentation as it emphasizes the edges and contours of the palm, making them more distinguishable from the background and the rest of the hand. 
+HOG features are also less sensitive to variations in lighting and small deformations, which enhances the segmentation accuracy and reliability in real-world scenarios.
+
+\begin{figure}[t]
+  \centering
+   \includegraphics[width=0.8\linewidth]{Images/preprocessing.png}
+
+   \caption{Example of preprocessing steps performed on an input palm image.}
+   \label{fig:onecol}
+\end{figure}
+
+
+\subsection{Data Annotation}
+In our study, we utilize a Vision-Language Model (VLM) to perform the initial labeling of palm line images. 
+The VLM leverages its ability to understand and process visual and textual information simultaneously, enabling it to generate accurate labels for the intricate patterns found in palm lines. 
+This automated labeling process serves as a foundational step in our data annotation pipeline, significantly reducing the manual effort required and ensuring consistency across the dataset. 
+By employing a VLM, we capitalize on advanced machine learning techniques to efficiently and effectively annotate our dataset, facilitating subsequent analysis and model training. 
+This approach not only enhances the quality of the initial labels, but also accelerates the overall data preparation process. 
+
+\begin{figure}[t]
+  \begin{verbatim}
+    {
+      "image": "FEMALE/IMG_0025.JPG",
+      "scores": {
+        "luck": 0.9,
+        "health": 0.7,
+        "romantic": 0.4.
+      }
+    }
+
+  \end{verbatim}
+  \centering
+
+   \caption{An example of labels produced by a VLM, in JSON format.}
+   \label{fig:onecol}
+\end{figure}
