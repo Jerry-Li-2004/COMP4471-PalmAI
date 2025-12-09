@@ -8,7 +8,7 @@ class LLM_Inference(LLM):
         """
         Sets up an instance of the LLM_Inference class by configuring the LLM client in the superclass.
         """
-        super.__init__()
+        super().__init__()
         
 
     def _get_sys_prompt(self):
