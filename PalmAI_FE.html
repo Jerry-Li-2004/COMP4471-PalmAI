@@ -287,10 +287,21 @@
         }
 
         .results-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 24px;
         }
+        .results-section {
+            width: 100%;
+        }
+        .results-content {
+            width: 100%;
+        }
+        .scores-section,
+        .analysis-section {
+            width: 100%;
+        }
+
 
         .scores-section {
             display: flex;
@@ -573,6 +584,55 @@
         let selectedFile = null;
         let analysisInProgress = false;
 
+        const attributeIcons = {
+            strength: `
+                <!-- Flexed muscle / arm -->
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 20h7a4 4 0 0 0 4-4v-2.5a2.5 2.5 0 0 0-2.5-2.5h-1.5
+                            l-1-2-2 1-1.5-3.5" />
+                    <path d="M5 13a4 4 0 0 0 2 7" />
+                </svg>
+            `,
+            romantic: `
+                <!-- Heart outline -->
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67
+                            l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23
+                            l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+            `,
+            luck: `
+                <!-- Four-leaf clover style icon -->
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 7
+                            C11 5.5 9 5 8 6
+                            C7 7 7.5 9 9 10
+                            C7.5 11 7 13 8 14
+                            C9 15 11 14.5 12 13
+                            C13 14.5 15 15 16 14
+                            C17 13 16.5 11 15 10
+                            C16.5 9 17 7 16 6
+                            C15 5 13 5.5 12 7z" />
+                    <path d="M12 13v5" />
+                </svg>
+            `,
+            potential: `
+                <!-- Money / growth icon -->
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="M8 11h8" />
+                    <path d="M10 9h4" />
+                    <path d="M10 13h4" />
+                </svg>
+            `
+        };
+
+
+        
         // Upload button click
         uploadBtn.addEventListener('click', () => fileInput.click());
 
@@ -618,7 +678,7 @@
             };
             reader.readAsDataURL(file);
         }
-
+        
         // Analyze button
         analyzeBtn.addEventListener('click', async () => {
             if (analysisInProgress) return;
@@ -630,22 +690,17 @@
             resultsSection.classList.remove('active');
 
             try {
-                // Simulate API call with timeout
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                const formData = new FormData();
+                formData.append('image', selectedFile);
 
-                // Call your backend API here
-                // const formData = new FormData();
-                // formData.append('image', selectedFile);
-                // const response = await fetch('/api/analyze-palm', {
-                //     method: 'POST',
-                //     body: formData
-                // });
-                // const data = await response.json();
+                const response = await fetch('http://127.0.0.1:5000/api/analyze-palm', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                // Mock data for demonstration
-                const mockData = generateMockAnalysis();
+                const data = await response.json();
 
-                displayResults(mockData);
+                displayResults(data);
             } catch (error) {
                 showError('Analysis failed. Please try again.');
                 console.error('Error:', error);
@@ -655,6 +710,7 @@
                 loadingSection.classList.remove('active');
             }
         });
+
 
         // Cancel button
         cancelBtn.addEventListener('click', resetUI);
@@ -673,43 +729,6 @@
             messageContainer.innerHTML = '';
         }
 
-        function generateMockAnalysis() {
-            return {
-                status: 'success',
-                data: {
-                    personality: {
-                        title: '👤 Personality',
-                        description: 'You are naturally intuitive and creative. Your balanced palm lines suggest good emotional stability and adaptability.',
-                        confidence: 87
-                    },
-                    career: {
-                        title: '💼 Career Potential',
-                        description: 'Strong life line indicates perseverance and determination. Well-suited for leadership roles and independent ventures.',
-                        confidence: 82
-                    },
-                    relationships: {
-                        title: '❤️ Relationships',
-                        description: 'Prominent heart line shows strong emotional capacity. You value deep connections and loyalty in relationships.',
-                        confidence: 79
-                    },
-                    health: {
-                        title: '🏥 Wellness',
-                        description: 'Overall indicators suggest good vitality and energy. Regular exercise and balance will support long-term wellness.',
-                        confidence: 75
-                    },
-                    destiny: {
-                        title: '✨ Life Path',
-                        description: 'Fate line suggests you are destined for meaningful achievements. Trust your instincts and pursue your passions.',
-                        confidence: 88
-                    },
-                    strengths: {
-                        title: '⭐ Key Strengths',
-                        description: 'Intuition, creativity, resilience, emotional intelligence, and natural leadership abilities.',
-                        confidence: 90
-                    }
-                }
-            };
-        }
 
         const iconMap = {
             '👤': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>',
@@ -731,19 +750,36 @@
             scoresContainer.innerHTML = '';
             analysisContainer.innerHTML = '';
 
-            // Build scores table
+            const scores = data.data.score || {};
+            const paragraph = data.data.text || '';
+
+            // Build scores table from score object keys
             const scoresTable = document.createElement('div');
             scoresTable.className = 'scores-table';
 
-            Object.values(data.data).forEach(item => {
+            Object.entries(scores).forEach(([key, value]) => {
+                const percentage = Math.round(value * 100);
+                const label = key.charAt(0).toUpperCase() + key.slice(1);
+                const icon = attributeIcons[key] || '';
+
                 const row = document.createElement('div');
                 row.className = 'table-row';
-                const emoji = item.title.match(/[\p{Emoji}]/u)?.[0] || '•';
-                const icon = iconMap[emoji] || `<span>${emoji}</span>`;
                 row.innerHTML = `
-                    <div class="table-row-label"><span style="display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; color: var(--color-accent-gold);">${icon}</span> ${item.title.split(' ')[1]}</div>
+                    <div class="table-row-label">
+                        <span style="
+                            display:inline-flex;
+                            width:20px;
+                            height:20px;
+                            align-items:center;
+                            justify-content:center;
+                            color:var(--color-accent-gold);
+                        ">
+                            ${icon}
+                        </span>
+                        ${label}
+                    </div>
                     <div class="table-row-score">
-                        <div class="score-value">${item.confidence}%</div>
+                        <div class="score-value">${percentage}%</div>
                         <div class="mini-progress">
                             <div class="mini-progress-fill" style="width: 0%"></div>
                         </div>
@@ -751,31 +787,26 @@
                 `;
                 scoresTable.appendChild(row);
 
-                // Animate mini progress bar
                 setTimeout(() => {
                     const fill = row.querySelector('.mini-progress-fill');
-                    fill.style.width = item.confidence + '%';
+                    fill.style.width = percentage + '%';
                 }, 100);
             });
 
+
             scoresContainer.appendChild(scoresTable);
 
-            // Build analysis section
+            // Single paragraph analysis
             analysisContainer.innerHTML = '<h3>Detailed Analysis</h3>';
             const analysisContent = document.createElement('div');
             analysisContent.className = 'analysis-content';
 
-            Object.values(data.data).forEach(item => {
-                const analysisItem = document.createElement('div');
-                analysisItem.className = 'analysis-item';
-                const emoji = item.title.match(/[\p{Emoji}]/u)?.[0] || '•';
-                const icon = iconMap[emoji] || `<span>${emoji}</span>`;
-                analysisItem.innerHTML = `
-                    <div class="analysis-title"><span style="display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; color: var(--color-accent-purple);">${icon}</span> ${item.title.split(' ').slice(1).join(' ')}</div>
-                    <div class="analysis-text">${item.description}</div>
-                `;
-                analysisContent.appendChild(analysisItem);
-            });
+            const analysisItem = document.createElement('div');
+            analysisItem.className = 'analysis-item';
+            analysisItem.innerHTML = `
+                <div class="analysis-text">${paragraph}</div>
+            `;
+            analysisContent.appendChild(analysisItem);
 
             analysisContainer.appendChild(analysisContent);
 
