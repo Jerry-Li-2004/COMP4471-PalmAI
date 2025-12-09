@@ -2,9 +2,15 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from werkzeug.utils import secure_filename
+from llm_inference.llm import LLM_Inference
+from labelling_scores.llm import LLM
+from labelling_scores.image_to_url import local_image_to_data_url
 
 app = Flask(__name__)
 CORS(app)  # Enable cross-origin requests from frontend
+
+LLM_INF = LLM_Inference()  # Initialize LLM client
+LLM_model = LLM()
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -26,42 +32,29 @@ def analyze_palm(image_path):
     For now, returns mock data
     """
     import random
-    
-    # This is where you'll integrate your ML model
-    # Example: model.predict(image_path)
-    
+
+    ### still hard coded, replace with model output
+    scores = {
+        "strength": round(random.uniform(0.1, 0.9), 2),
+        "romantic": round(random.uniform(0.1, 0.9), 2),
+        "luck": round(random.uniform(0.1, 0.9), 2),
+        "potential": round(random.uniform(0.1, 0.9), 2),
+    }
+
+    user_prompt = LLM_INF.get_user_prompt(scores=scores)
+    text = LLM_model.get_LLM_output(
+        user_prompt=user_prompt,
+    )
+
+    # text = (
+    #     "Your palm suggests balanced inner strength, a warm romantic nature, "
+    #     "favorable luck in key moments, and strong potential for growth across "
+    #     "multiple areas of life."
+    # )
     
     return {
-        'personality': {
-            'title': '👤 Personality',
-            'description': 'You are naturally intuitive and creative. Your balanced palm lines suggest good emotional stability and adaptability.',
-            'confidence': random.randint(75, 95)
-        },
-        'career': {
-            'title': '💼 Career Potential',
-            'description': 'Well-suited for leadership roles and independent ventures.',
-            'confidence': random.randint(75, 95)
-        },
-        'relationships': {
-            'title': '❤️ Relationships',
-            'description': 'Prominent heart line shows strong emotional capacity. You value deep connections and loyalty in relationships.',
-            'confidence': random.randint(75, 95)
-        },
-        'health': {
-            'title': '🏥 Wellness',
-            'description': 'Overall indicators suggest good vitality and energy. Regular exercise and balance will support long-term wellness.',
-            'confidence': random.randint(75, 95)
-        },
-        'destiny': {
-            'title': '✨ Life Path',
-            'description': 'Fate line suggests you are destined for meaningful achievements. Trust your instincts and pursue your passions.',
-            'confidence': random.randint(75, 95)
-        },
-        'strengths': {
-            'title': '⭐ Key Strengths',
-            'description': 'Intuition, creativity, resilience, emotional intelligence, and natural leadership abilities.',
-            'confidence': random.randint(75, 95)
-        }
+        "score": scores,
+        "text": text
     }
 
 @app.route('/api/analyze-palm', methods=['POST'])
