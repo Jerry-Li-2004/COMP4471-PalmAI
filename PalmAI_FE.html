@@ -618,7 +618,7 @@
             };
             reader.readAsDataURL(file);
         }
-
+        
         // Analyze button
         analyzeBtn.addEventListener('click', async () => {
             if (analysisInProgress) return;
@@ -630,22 +630,17 @@
             resultsSection.classList.remove('active');
 
             try {
-                // Simulate API call with timeout
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                const formData = new FormData();
+                formData.append('image', selectedFile);
 
-                // Call your backend API here
-                // const formData = new FormData();
-                // formData.append('image', selectedFile);
-                // const response = await fetch('/api/analyze-palm', {
-                //     method: 'POST',
-                //     body: formData
-                // });
-                // const data = await response.json();
+                const response = await fetch('http://127.0.0.1:5000/api/analyze-palm', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                // Mock data for demonstration
-                const mockData = generateMockAnalysis();
+                const data = await response.json();
 
-                displayResults(mockData);
+                displayResults(data);
             } catch (error) {
                 showError('Analysis failed. Please try again.');
                 console.error('Error:', error);
@@ -655,6 +650,7 @@
                 loadingSection.classList.remove('active');
             }
         });
+
 
         // Cancel button
         cancelBtn.addEventListener('click', resetUI);
@@ -673,43 +669,6 @@
             messageContainer.innerHTML = '';
         }
 
-        function generateMockAnalysis() {
-            return {
-                status: 'success',
-                data: {
-                    personality: {
-                        title: '👤 Personality',
-                        description: 'You are naturally intuitive and creative. Your balanced palm lines suggest good emotional stability and adaptability.',
-                        confidence: 87
-                    },
-                    career: {
-                        title: '💼 Career Potential',
-                        description: 'Strong life line indicates perseverance and determination. Well-suited for leadership roles and independent ventures.',
-                        confidence: 82
-                    },
-                    relationships: {
-                        title: '❤️ Relationships',
-                        description: 'Prominent heart line shows strong emotional capacity. You value deep connections and loyalty in relationships.',
-                        confidence: 79
-                    },
-                    health: {
-                        title: '🏥 Wellness',
-                        description: 'Overall indicators suggest good vitality and energy. Regular exercise and balance will support long-term wellness.',
-                        confidence: 75
-                    },
-                    destiny: {
-                        title: '✨ Life Path',
-                        description: 'Fate line suggests you are destined for meaningful achievements. Trust your instincts and pursue your passions.',
-                        confidence: 88
-                    },
-                    strengths: {
-                        title: '⭐ Key Strengths',
-                        description: 'Intuition, creativity, resilience, emotional intelligence, and natural leadership abilities.',
-                        confidence: 90
-                    }
-                }
-            };
-        }
 
         const iconMap = {
             '👤': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>',
