@@ -1,2 +1,15 @@
-data
-model_path
+model/__pycache__/*
+
+data/synthetic/*
+data/resized_dataset/*
+data/training_dataset/*
+data/labels.json
+
+Report/*.aux
+Report/*.log
+Report/*.out
+Report/*.bbl
+Report/*.blg
+Report/*.brf
+
+*.pth
