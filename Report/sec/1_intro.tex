@@ -8,12 +8,38 @@ There is also a lack of evidence for the connection between palm line features a
 In the age of machine learning, large datasets can be leveraged along with machine learning techniques, such as deep neural networks, to uncover hidden characteristics and connections that were previously difficult to observe.
 Under this predicate, we propose that there may be statistical connections between palm features and palmistry fortune-telling results.
 
+In this project, we propose PalmReader.ai, an application to perform palmistry fortune-telling using an image of a palm. 
 We construct a full pipeline to predict scores for aspects of the user’s life, such as character, emotional predispositions, health status, and life path.
 Our pipeline is composed of the following components.
 
 \begin{itemize}
     \item \textbf{Vision Transformer (ViT)}: A vision transformer serves to extract features to vector embeddings that encode geometric features of palm lines in the input image.
-    \item \textbf{Text decoder}: We use a text decoder to generate factual descriptions of the user’s palm lines in natural language from the embeddings produced by the vision transformer.
-    \item \textbf{Scoring system}: We score different aspects of life by examining the geometric features of the detected palm lines, using a neural network.
-    \item \textbf{LLM inference}: We produce, from the description of palm lines and scores, a report in natural language that outputs fortune-telling content.
+    \item \textbf{Scoring system}: We score different aspects of life by examining the geometric features of the detected palm lines, using a features extracted from the vision transformer.
+    \item \textbf{LLM inference}: We produce, from the and scores, a report in natural language that outputs fortune-telling content.
 \end{itemize}
+
+We obtain satisfactory results from experiments with various architectures, with the lowest mean squred error (MSE) loss at 0.0075.
+Inference using an LLM provides accurate reports on fortune-telling results based on our framework's predicted scores.
+
+
+\section{Related Work}
+\label{sec:relatedwork}
+
+\subsection{Palmistry with Machine Learning}
+~\cite{2509.02248} proposes palmistry inference using random forests and linear SVM models.
+While the problem formulation is similar, we note that this paper classifies a palm line to different fixed categories, 
+that eventually output to predefined descriptions.
+
+Building upon this idea, we perform score prediction for each palm line and aspect of life,
+and utilize an LLM for natural language inference.
+This gives more informative and personalized outputs with our method.
+
+\subsection{U-Net Context Fusion Module}
+~\cite{2102.12127} proposes a deep learning-based solution to efficiently detect and segment palm lines from an image of a palm.
+This paper proposes a novel component, the Context Fusion Module (CFM), which is integrated into the U-Net as a bottleneck.
+The CFM captures both global and local contextual features from an image of the palm,
+using an attention mechanism to capture global and local contextual features from the palm image.
+Experimental results showed that the proposed method showed large advantages over traditional palm line segmentation methods.
+
+Inspired by this method, we include a feature fusion module, combining features from regional feature extractors and global feature extractors.
+This allows us to extract information from local to global levels of the image for further analysis and scoring.
