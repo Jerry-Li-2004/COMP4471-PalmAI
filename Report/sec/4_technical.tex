@@ -24,7 +24,7 @@ This involves:
 
 \begin{itemize}
     \item \textbf{Color Correction \& Normalization}: Adjusting for lighting variations to ensure consistent color and contrast across images.
-    \item \textbf{Pale Region Isolation}: A specialized segmentation model (e.g. a lightweight U-Net) is employed to accurately identify and crop the four primary pale regions corresponding to the mounts of the palm (e.g., Mount of Venus, Mount of Jupiter, etc.), as well as the central palmar area containing the primary lines (Heart, Head, Life).
+    \item \textbf{Pale Region Isolation}: A specialized segmentation model is employed to accurately identify and crop the four primary pale regions corresponding to the mounts of the palm (e.g., Mount of Venus, Mount of Jupiter, etc.), as well as the central palmar area containing the primary lines (Heart, Head, Life).
     \item \textbf{Image Patching}: The isolated full palm and/or specific regions are divided into a sequence of fixed-size patches, which are then linearly projected into a lower-dimensional space to create a patch embedding sequence.
 \end{itemize}
 
@@ -34,31 +34,32 @@ Instead of a single transformer, we propose a Hybrid Transformer Encoder archite
 \begin{itemize}
     \item \textbf{Shared Backbone}: A Vision Transformer (ViT) backbone first processes the entire preprocessed palm image to generate a global context embedding, represented by the [CLS] token.
     \item \textbf{Region-Specific Encoders}: In parallel, the cropped image regions containing specific palm lines (Heart, Head, Life, Fate) are processed by smaller, independent transformer encoders. This allows for focused feature extraction tailored to the unique characteristics of each line.
-    \item \textbf{Feature Fusion}: The global [CLS] token embedding and the features from the region-specific encoders are concatenated and passed through a fusion module (e.g., a cross-attention layer or a simple fully connected layer) to create a unified, comprehensive feature representation $F_{\text{unified}}$.
+    \item \textbf{Feature Fusion}: The global [CLS] token embedding and the features from the region-specific encoders are concatenated and passed through a fusion module (e.g., a cross-attention layer or a simple fully connected layer) to create a unified, comprehensive feature representation $F_{\text{score}}$ that will be used for score regression.
 \end{itemize}
 
 
 \subsection{Feature Processing and Multi-Modal Interpretation}
-
 This stage processes the unified feature representation $F_{\text{score}}$ through a streamlined pipeline that directly maps visual patterns to quantitative assessments.
 
 \subsubsection{Direct Score Regression}
-
-The Vision Transformer backbone processes the segmented palm image and extracts high-level visual features. These features are then passed through a regression head that directly outputs four continuous-valued scores corresponding to refined palmistry dimensions: Strength, Romantic, Luck, and Potential.
+The Vision Transformer backbone processes the segmented palm image and extracts high-level visual features. 
+These features are then passed through a regression head that directly outputs four continuous-valued scores corresponding to refined palmistry dimensions: Strength, Romantic, Luck, and Potential.
 This end-to-end approach eliminates intermediate text generation steps, providing a more efficient and direct mapping from visual input to quantitative output.
 
 \subsubsection{LLM-as-Judge Evaluation Framework}
-
-To train and evaluate the regression model, we employ an LLM-as-Judge methodology. The Qwen3 VLM model is used to process and label the training dataset, generating ground truth scores for each palm image.
-These LLM-generated labels serve as the target values for training the Vision Transformer's regression head. The model is optimized using standard regression loss functions (e.g., Mean Squared Error) to minimize the discrepancy between its predicted scores and the LLM-generated ground truth.
-This approach leverages the powerful reasoning capabilities of large language models to provide consistent and structured supervision for the visual analysis task, ensuring that the model learns to capture the nuanced palmistry characteristics for the specified dimensions.
+To train and evaluate the regression model, we employ an LLM-as-Judge methodology. 
+The Qwen3 VLM model is used to process and label the training dataset, generating ground truth scores for each palm image.
+These LLM-generated labels serve as the target values for training the Vision Transformer's regression head. 
+The model is optimized using standard regression loss functions (e.g., Mean Squared Error) to minimize the discrepancy between its predicted scores and the LLM-generated ground truth.
+This approach leverages the powerful reasoning capabilities of large language models to provide consistent and structured supervision for the visual analysis task, 
+ensuring that the model learns to capture the nuanced palmistry characteristics for the specified dimensions.
 
 \subsection{LLM Inference for Holistic Synthesis}
 The final stage leverages a Large Language Model (LLM) as a sophisticated information synthesizer.
 
 \begin{itemize}
-    \item \textbf{Input Prompt Construction}: The outputs from previous stages are assembled into a detailed prompt for the LLM. We include structured descriptions with output scores of vision transformer, score vectors $S_{\text{NN}}$ and $S_{\text{rule}}$, as well as a system prompt framing the task.
-    \item \textbf{Natural Language Generation}: The LLM (e.g., a fine-tuned Llama 2 or GPT-3.5 model) processes this rich, multi-modal input to produce the final output. It does not just paraphrase; it reasons about the interplay between different lines and scores, generating a novel, insightful, and human-readable report that includes character analysis and life suggestions. This step adds a layer of interpretation and narrative fluency that is absent in simpler sequence-to-sequence models.
+    \item \textbf{Input Prompt Construction}: The outputs from previous stages are assembled into a detailed prompt for the LLM. We include structured descriptions with output scores of vision transformer, the score vector $S_{\text{NN}}$, as well as a system prompt framing the task.
+    \item \textbf{Natural Language Generation}: The LLM processes this rich, multi-modal input to produce the final output. It does not just paraphrase; it reasons about the interplay between different lines and scores, generating a novel, insightful, and human-readable report that includes character analysis and life suggestions. This step adds a layer of interpretation and narrative fluency that is absent in simpler sequence-to-sequence models.
 \end{itemize}
 
 \begin{figure}[t]
