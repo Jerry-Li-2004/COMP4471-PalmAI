@@ -177,6 +177,24 @@
             transform: translateY(0);
         }
 
+        /* NEW: secondary button style for camera */
+        .btn-secondary { /* NEW */
+            margin-top: 12px;
+            padding: 10px 24px;
+            background: var(--color-surface-light);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover { /* NEW */
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         /* Preview section */
         .preview-section {
             display: none;
@@ -301,7 +319,6 @@
         .analysis-section {
             width: 100%;
         }
-
 
         .scores-section {
             display: flex;
@@ -493,6 +510,19 @@
             margin-bottom: 20px;
             font-size: 13px;
         }
+
+        /* NEW: camera container styling */
+        #cameraContainer { /* NEW */
+            display: none;
+            margin-top: 20px;
+        }
+
+        #cameraVideo { /* NEW */
+            width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            background: #000;
+        }
     </style>
 </head>
 <body>
@@ -527,7 +557,20 @@
                         Clear lighting, flat hand surface, all fingers visible, fingers slightly spread
                     </div>
                     <button class="btn-upload" id="uploadBtn">Choose Image</button>
+                    <!-- NEW: Camera button -->
+                    <button class="btn-secondary" id="cameraBtn" type="button">Use Camera</button> <!-- NEW -->
                     <input type="file" id="fileInput" accept="image/*">
+                    
+                    <!-- NEW: Camera container with live preview -->
+                    <div id="cameraContainer">
+                        <video id="cameraVideo" autoplay playsinline></video>
+                        <button class="btn-upload" id="takePhotoBtn" type="button" style="margin-top:12px;">
+                            Take Photo
+                        </button>
+                        <button class="btn-cancel" id="closeCameraBtn" type="button" style="margin-top:8px; width:100%;">
+                            Cancel Camera
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Preview Section -->
@@ -581,6 +624,14 @@
         const analysisContainer = document.getElementById('analysisContainer');
         const messageContainer = document.getElementById('messageContainer');
 
+        // NEW: camera elements
+        const cameraBtn = document.getElementById('cameraBtn');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const takePhotoBtn = document.getElementById('takePhotoBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        let cameraStream = null; // NEW
+
         let selectedFile = null;
         let analysisInProgress = false;
 
@@ -631,8 +682,15 @@
             `
         };
 
+        const iconMap = {
+            '👤': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>',
+            '💼': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path></svg>',
+            '❤️': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
+            '🏥': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+            '✨': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="12 2 15.09 8.26 22 9.09 17 14.08 18.18 21.02 12 17.77 5.82 21.02 7 14.08 2 9.09 8.91 8.26 12 2"></polygon></svg>',
+            '⭐': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.09 17 14.08 18.18 21.02 12 17.77 5.82 21.02 7 14.08 2 9.09 8.91 8.26 12 2"></polygon></svg>'
+        };
 
-        
         // Upload button click
         uploadBtn.addEventListener('click', () => fileInput.click());
 
@@ -678,7 +736,7 @@
             };
             reader.readAsDataURL(file);
         }
-        
+
         // Analyze button
         analyzeBtn.addEventListener('click', async () => {
             if (analysisInProgress) return;
@@ -711,7 +769,6 @@
             }
         });
 
-
         // Cancel button
         cancelBtn.addEventListener('click', resetUI);
 
@@ -727,17 +784,9 @@
             resultsSection.classList.remove('active');
             loadingSection.classList.remove('active');
             messageContainer.innerHTML = '';
+            stopCamera(); // NEW
+            cameraContainer.style.display = 'none'; // NEW
         }
-
-
-        const iconMap = {
-            '👤': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>',
-            '💼': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path></svg>',
-            '❤️': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
-            '🏥': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
-            '✨': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="12 2 15.09 8.26 22 9.09 17 14.08 18.18 21.02 12 17.77 5.82 21.02 7 14.08 2 9.09 8.91 8.26 12 2"></polygon></svg>',
-            '⭐': '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.09 17 14.08 18.18 21.02 12 17.77 5.82 21.02 7 14.08 2 9.09 8.91 8.26 12 2"></polygon></svg>'
-        };
 
         function displayResults(data) {
             if (data.status !== 'success') {
@@ -753,7 +802,6 @@
             const scores = data.data.score || {};
             const paragraph = data.data.text || '';
 
-            // Build scores table from score object keys
             const scoresTable = document.createElement('div');
             scoresTable.className = 'scores-table';
 
@@ -793,10 +841,8 @@
                 }, 100);
             });
 
-
             scoresContainer.appendChild(scoresTable);
 
-            // Single paragraph analysis
             analysisContainer.innerHTML = '<h3>Detailed Analysis</h3>';
             const analysisContent = document.createElement('div');
             analysisContent.className = 'analysis-content';
@@ -821,6 +867,72 @@
         function showSuccess(message) {
             messageContainer.innerHTML = `<div class="success-message">✓ ${message}</div>`;
         }
+
+        // NEW: camera logic using getUserMedia
+        cameraBtn.addEventListener('click', async (event) => { // NEW
+            event.stopPropagation();
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showError('Camera not supported in this browser.');
+                return;
+            }
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                cameraVideo.srcObject = cameraStream;
+                cameraContainer.style.display = 'block';
+                messageContainer.innerHTML = '';
+            } catch (err) {
+                showError('Could not access camera. Please allow camera permissions.');
+                console.error(err);
+            }
+        });
+
+        closeCameraBtn.addEventListener('click', (event) => { // NEW
+            event.stopPropagation();
+            stopCamera();
+            cameraContainer.style.display = 'none';
+        });
+
+        function stopCamera() { // NEW
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+            }
+        }
+
+        takePhotoBtn.addEventListener('click', (event) => { // NEW
+            event.stopPropagation();
+            if (!cameraStream) return;
+
+            const canvas = document.createElement('canvas');
+            const videoWidth = cameraVideo.videoWidth || 640;
+            const videoHeight = cameraVideo.videoHeight || 480;
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(cameraVideo, 0, 0, videoWidth, videoHeight);
+
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    showError('Failed to capture photo from camera');
+                    return;
+                }
+
+                selectedFile = new File([blob], 'camera-capture.png', { type: 'image/png' });
+
+                const url = URL.createObjectURL(blob);
+                previewImage.src = url;
+
+                uploadArea.style.display = 'none';
+                previewSection.classList.add('active');
+                messageContainer.innerHTML = '';
+
+                stopCamera();
+                cameraContainer.style.display = 'none';
+            }, 'image/png');
+        });
     </script>
 </body>
 </html>
