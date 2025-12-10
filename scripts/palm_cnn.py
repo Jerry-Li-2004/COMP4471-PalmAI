@@ -1,3 +1,4 @@
+import json
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -38,55 +39,71 @@ class PalmLineProcessor:
         return Image.fromarray(enhanced)
 
 
-class PalmLineDataset(Dataset):
-    def __init__(self, image_paths, labels=None, transform=None, is_training=True):
+class PalmScoreDataset(Dataset):
+    """Dataset for palm score regression with real labels"""
+    
+    def __init__(self, image_paths, labels_dict=None, transform=None, is_training=True):
         self.image_paths = image_paths
-        self.labels = labels
         self.transform = transform
         self.is_training = is_training
         self.processor = PalmLineProcessor()
-    
+        self.labels_dict = labels_dict or {}
+        
+        # Filter images that have labels
+        self.valid_indices = []
+        for idx, img_path in enumerate(image_paths):
+            img_name = os.path.basename(img_path)
+            if img_name in self.labels_dict:
+                self.valid_indices.append(idx)
+        
     def __len__(self):
-        return len(self.image_paths)
+        return len(self.valid_indices)
     
     def __getitem__(self, idx):
-        # Load and preprocess image
-        image_path = self.image_paths[idx]
+        actual_idx = self.valid_indices[idx]
+        image_path = self.image_paths[actual_idx]
+        
         try:
             image = Image.open(image_path).convert('RGB')
             
-            # Preprocess to enhance palm lines (convert to grayscale)
+            # Preprocess to enhance palm lines
             processed_image = self.processor.preprocess_image(image)
             
             if self.transform:
                 processed_image = self.transform(processed_image)
             
-            if self.is_training and self.labels is not None:
-                # Get labels for this specific sample
-                sample_labels = {}
-                for label_type, label_tensor in self.labels.items():
-                    sample_labels[label_type] = label_tensor[idx]
-                return processed_image, sample_labels
+            if self.is_training and self.labels_dict:
+                img_name = os.path.basename(image_path)
+                scores = self.labels_dict.get(img_name, {
+                    'strength': 0.5, 'romantic': 0.5, 'luck': 0.5, 'potential': 0.5
+                })
+                
+                # Convert to tensor
+                label = torch.tensor([
+                    scores.get('strength', 0.5),
+                    scores.get('romantic', 0.5),
+                    scores.get('luck', 0.5),
+                    scores.get('potential', 0.5)
+                ], dtype=torch.float32)
+                
+                return processed_image, label
             
             return processed_image
         
         except Exception as e:
             print(f"Error loading image {image_path}: {e}")
-            # Return a dummy image if there's an error
-            dummy_image = torch.zeros(
-                1, 224, 224) if self.transform else Image.new('L', (224, 224))
-            if self.is_training and self.labels is not None:
-                dummy_labels = {label_type: torch.tensor(
-                    0) for label_type in self.labels.keys()}
-                return dummy_image, dummy_labels
+            dummy_image = torch.zeros(1, 224, 224) if self.transform else Image.new('L', (224, 224))
+            if self.is_training:
+                dummy_label = torch.tensor([0.5, 0.5, 0.5, 0.5], dtype=torch.float32)
+                return dummy_image, dummy_label
             return dummy_image
 
 
-class MultiScaleCNN(nn.Module):
-    """Multi-scale CNN for palm line feature extraction"""
+class MultiScaleCNNPredictor(nn.Module):
+    """Multi-scale CNN for palm score regression"""
     
     def __init__(self, in_channels=1):
-        super(MultiScaleCNN, self).__init__()
+        super(MultiScaleCNNPredictor, self).__init__()
         
         # Initial convolution
         self.init_conv = nn.Sequential(
@@ -130,7 +147,7 @@ class MultiScaleCNN(nn.Module):
             nn.AdaptiveAvgPool2d((1, 1))
         )
         
-        # Attention mechanism for important regions
+        # Attention mechanism
         self.attention = nn.Sequential(
             nn.Conv2d(128, 1, kernel_size=1),
             nn.Sigmoid()
@@ -152,33 +169,20 @@ class MultiScaleCNN(nn.Module):
             nn.Dropout(0.3)
         )
         
-        # Multi-task heads
-        self.heart_line_head = nn.Sequential(
-            nn.Linear(512, 256), 
-            nn.GELU(), 
-            nn.Dropout(0.2),
-            nn.Linear(256, 10)
-        )
-        self.head_line_head = nn.Sequential(
-            nn.Linear(512, 256), 
-            nn.GELU(), 
-            nn.Dropout(0.2),
-            nn.Linear(256, 10)
-        )
-        self.life_line_head = nn.Sequential(
-            nn.Linear(512, 256), 
-            nn.GELU(), 
-            nn.Dropout(0.2),
-            nn.Linear(256, 15)
-        )
-        self.fate_line_head = nn.Sequential(
-            nn.Linear(512, 256), 
+        # Regression head for 4 scores
+        self.regression_head = nn.Sequential(
+            nn.Linear(512, 256),
             nn.GELU(),
             nn.Dropout(0.2),
-            nn.Linear(256, 8)
+            nn.Linear(256, 128),
+            nn.GELU(),
+            nn.Dropout(0.2),
+            nn.Linear(128, 4)  # 4 output scores
         )
         
-        # Initialize weights
+        # Sigmoid activation for scores between 0-1
+        self.sigmoid = nn.Sigmoid()
+        
         self._initialize_weights()
     
     def _initialize_weights(self):
@@ -219,27 +223,25 @@ class MultiScaleCNN(nn.Module):
         fused_features = torch.cat([scale3_feat, global_feat], dim=1)
         fused_features = self.fusion(fused_features)
         
-        # Multi-task predictions
-        return {
-            'heart_line': self.heart_line_head(fused_features),
-            'head_line': self.head_line_head(fused_features),
-            'life_line': self.life_line_head(fused_features),
-            'fate_line': self.fate_line_head(fused_features)
-        }
+        # Regression predictions
+        scores = self.regression_head(fused_features)
+        scores = self.sigmoid(scores)
+        
+        return scores
 
 
-class EfficientPalmCNN(nn.Module):
-    """EfficientNet-based CNN for palm line analysis"""
+class EfficientPalmCNNPredictor(nn.Module):
+    """EfficientNet-based CNN for palm score regression"""
     
     def __init__(self, in_channels=1, backbone='efficientnet_b0'):
-        super(EfficientPalmCNN, self).__init__()
+        super(EfficientPalmCNNPredictor, self).__init__()
         
         # Load pretrained EfficientNet
         if backbone.startswith('efficientnet'):
             self.backbone = timm.create_model(backbone, 
                                             pretrained=True,
                                             in_chans=in_channels,
-                                            num_classes=0)  # Remove classification head
+                                            num_classes=0)
             
             # Get feature dimension
             backbone_features = self.backbone(torch.randn(1, in_channels, 224, 224))
@@ -247,14 +249,12 @@ class EfficientPalmCNN(nn.Module):
         else:
             # Fallback to ResNet
             self.backbone = models.resnet18(pretrained=True)
-            # Modify first conv layer for single channel input
             self.backbone.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, 
                                           stride=2, padding=3, bias=False)
-            # Remove the final classification layer
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
             feature_dim = 512
         
-        # Multi-task heads with shared backbone features
+        # Shared features
         self.shared_features = nn.Sequential(
             nn.Linear(feature_dim, 512),
             nn.BatchNorm1d(512),
@@ -266,19 +266,15 @@ class EfficientPalmCNN(nn.Module):
             nn.Dropout(0.3)
         )
         
-        # Task-specific heads
-        self.heart_line_head = nn.Linear(256, 10)
-        self.head_line_head = nn.Linear(256, 10)
-        self.life_line_head = nn.Linear(256, 15)
-        self.fate_line_head = nn.Linear(256, 8)
-        
-        # Line attention module
-        self.line_attention = nn.Sequential(
-            nn.Conv2d(64, 32, kernel_size=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(32, 1, kernel_size=1),
-            nn.Sigmoid()
+        # Regression head
+        self.regression_head = nn.Sequential(
+            nn.Linear(256, 128),
+            nn.GELU(),
+            nn.Dropout(0.2),
+            nn.Linear(128, 4)
         )
+        
+        self.sigmoid = nn.Sigmoid()
     
     def forward(self, x):
         # Extract features from backbone
@@ -291,20 +287,18 @@ class EfficientPalmCNN(nn.Module):
         # Process through shared layers
         shared_feat = self.shared_features(features)
         
-        # Multi-task predictions
-        return {
-            'heart_line': self.heart_line_head(shared_feat),
-            'head_line': self.head_line_head(shared_feat),
-            'life_line': self.life_line_head(shared_feat),
-            'fate_line': self.fate_line_head(shared_feat)
-        }
+        # Regression predictions
+        scores = self.regression_head(shared_feat)
+        scores = self.sigmoid(scores)
+        
+        return scores
 
 
-class RegionAwarePalmCNN(nn.Module):
-    """CNN with region-aware feature extraction for palm lines"""
+class RegionAwarePalmCNNPredictor(nn.Module):
+    """CNN with region-aware feature extraction for palm score regression"""
     
     def __init__(self, in_channels=1):
-        super(RegionAwarePalmCNN, self).__init__()
+        super(RegionAwarePalmCNNPredictor, self).__init__()
         
         # Shared backbone
         self.shared_backbone = nn.Sequential(
@@ -324,16 +318,14 @@ class RegionAwarePalmCNN(nn.Module):
         )
         
         # Region-specific feature extractors
-        self.heart_line_extractor = self._build_region_extractor(128, 64)
-        self.head_line_extractor = self._build_region_extractor(128, 64)
-        self.life_line_extractor = self._build_region_extractor(128, 64)
-        self.fate_line_extractor = self._build_region_extractor(128, 64)
+        self.region_extractors = nn.ModuleList([
+            self._build_region_extractor(128, 64) for _ in range(4)
+        ])
         
-        # Attention for each region
-        self.heart_attention = self._build_attention(128)
-        self.head_attention = self._build_attention(128)
-        self.life_attention = self._build_attention(128)
-        self.fate_attention = self._build_attention(128)
+        # Attention modules
+        self.attention_modules = nn.ModuleList([
+            self._build_attention(128) for _ in range(4)
+        ])
         
         # Feature fusion
         self.fusion = nn.Sequential(
@@ -343,11 +335,15 @@ class RegionAwarePalmCNN(nn.Module):
             nn.Dropout(0.3)
         )
         
-        # Task heads
-        self.heart_line_head = nn.Linear(256, 10)
-        self.head_line_head = nn.Linear(256, 10)
-        self.life_line_head = nn.Linear(256, 15)
-        self.fate_line_head = nn.Linear(256, 8)
+        # Regression head
+        self.regression_head = nn.Sequential(
+            nn.Linear(256, 128),
+            nn.GELU(),
+            nn.Dropout(0.2),
+            nn.Linear(128, 4)
+        )
+        
+        self.sigmoid = nn.Sigmoid()
     
     def _build_region_extractor(self, in_channels, out_channels):
         return nn.Sequential(
@@ -369,146 +365,45 @@ class RegionAwarePalmCNN(nn.Module):
         # Extract shared features
         shared_feat = self.shared_backbone(x)
         
-        # Apply attention for each region
-        heart_attn = self.heart_attention(shared_feat)
-        head_attn = self.head_attention(shared_feat)
-        life_attn = self.life_attention(shared_feat)
-        fate_attn = self.fate_attention(shared_feat)
+        region_features = []
+        for i in range(4):
+            # Apply attention
+            attn = self.attention_modules[i](shared_feat)
+            attended_features = shared_feat * attn
+            
+            # Extract region-specific features
+            region_feat = self.region_extractors[i](attended_features)
+            region_feat = region_feat.view(region_feat.size(0), -1)
+            region_features.append(region_feat)
         
-        # Extract region-specific features
-        heart_feat = self.heart_line_extractor(shared_feat * heart_attn)
-        head_feat = self.head_line_extractor(shared_feat * head_attn)
-        life_feat = self.life_line_extractor(shared_feat * life_attn)
-        fate_feat = self.fate_line_extractor(shared_feat * fate_attn)
-        
-        # Flatten and concatenate
-        heart_feat = heart_feat.view(heart_feat.size(0), -1)
-        head_feat = head_feat.view(head_feat.size(0), -1)
-        life_feat = life_feat.view(life_feat.size(0), -1)
-        fate_feat = fate_feat.view(fate_feat.size(0), -1)
-        
-        combined = torch.cat([heart_feat, head_feat, life_feat, fate_feat], dim=1)
+        # Concatenate all region features
+        combined = torch.cat(region_features, dim=1)
         
         # Feature fusion
         fused = self.fusion(combined)
         
-        # Multi-task predictions
-        return {
-            'heart_line': self.heart_line_head(fused),
-            'head_line': self.head_line_head(fused),
-            'life_line': self.life_line_head(fused),
-            'fate_line': self.fate_line_head(fused)
-        }
+        # Regression predictions
+        scores = self.regression_head(fused)
+        scores = self.sigmoid(scores)
+        
+        return scores
 
 
-class PalmLineInterpreter:
-    """Interprets model predictions based on palmistry rules"""
-    
-    def __init__(self):
-        self.heart_line_interpretations = [
-            "Content with love life",
-            "Selfish when it comes to love",
-            "Caring and understanding",
-            "Less interest in romance",
-            "Heart is broken easily",
-            "Freely expresses emotions and feelings",
-            "Good handle on emotions",
-            "Many relationships, absence of serious relationships",
-            "Sad or depressed",
-            "Emotional trauma"
-        ]
-        
-        self.head_line_interpretations = [
-            "Prefers physical achievements over mental ones",
-            "Creativity",
-            "Inclination towards literature and fantasy",
-            "Aptitude for math, business, and logic",
-            "Adventure, enthusiasm for life",
-            "Short attention span",
-            "Thinking is clear and focused",
-            "Thinks realistically",
-            "Inconsistencies in thought or varying interests",
-            "Momentous decisions"
-        ]
-        
-        self.life_line_interpretations = [
-            "Often tired",
-            "Good physical and mental health",
-            "Positive attitude towards life",
-            "Pessimist",
-            "Plenty of energy",
-            "Enthusiastic and courageous",
-            "Vitality",
-            "Manipulated by others",
-            "Strength and enthusiasm",
-            "Cautious when it comes to relationships",
-            "Academic achievement",
-            "Success in business",
-            "Sign of wealth",
-            "Strong attachment with family",
-            "Extra vitality"
-        ]
-        
-        self.fate_line_interpretations = [
-            "Strongly controlled by fate",
-            "Successful life ahead",
-            "Prone to many changes in life from external forces",
-            "Great amount of wealth ahead",
-            "Self-made individual; develops aspirations early on",
-            "Interests must be surrendered to those of others",
-            "Support offered by family and friends",
-            "Comfortable but uneventful life ahead"
-        ]
-    
-    def interpret_predictions(self, predictions, threshold=0.1):
-        """Convert model predictions to human-readable interpretations"""
-        interpretations = {}
-        
-        with torch.no_grad():
-            # Heart line interpretation
-            heart_probs = torch.softmax(predictions['heart_line'], dim=1)
-            top_heart = torch.topk(heart_probs, 3, dim=1)
-            interpretations['heart_line'] = [
-                (self.heart_line_interpretations[i], f"{p:.2%}")
-                for i, p in zip(top_heart.indices[0].cpu().numpy(),
-                              top_heart.values[0].cpu().numpy())
-                if p >= threshold
-            ]
-            
-            # Head line interpretation
-            head_probs = torch.softmax(predictions['head_line'], dim=1)
-            top_head = torch.topk(head_probs, 3, dim=1)
-            interpretations['head_line'] = [
-                (self.head_line_interpretations[i], f"{p:.2%}")
-                for i, p in zip(top_head.indices[0].cpu().numpy(),
-                              top_head.values[0].cpu().numpy())
-                if p >= threshold
-            ]
-            
-            # Life line interpretation
-            life_probs = torch.softmax(predictions['life_line'], dim=1)
-            top_life = torch.topk(life_probs, 3, dim=1)
-            interpretations['life_line'] = [
-                (self.life_line_interpretations[i], f"{p:.2%}")
-                for i, p in zip(top_life.indices[0].cpu().numpy(),
-                              top_life.values[0].cpu().numpy())
-                if p >= threshold
-            ]
-            
-            # Fate line interpretation
-            fate_probs = torch.softmax(predictions['fate_line'], dim=1)
-            top_fate = torch.topk(fate_probs, 3, dim=1)
-            interpretations['fate_line'] = [
-                (self.fate_line_interpretations[i], f"{p:.2%}")
-                for i, p in zip(top_fate.indices[0].cpu().numpy(),
-                              top_fate.values[0].cpu().numpy())
-                if p >= threshold
-            ]
-        
-        return interpretations
+def load_labels_from_json(json_path):
+    """Load labels from JSON file"""
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    labels_dict = {}
+    for item in data:
+        img_name = os.path.basename(item['image'])
+        scores = json.loads(item['scores'])  # Parse the string JSON
+        labels_dict[img_name] = scores
+
+    return labels_dict
 
 
-class PalmAnalysisPipelineCNN:
+class PalmScorePipelineCNN:
     def __init__(self, model_type='multiscale', model_path=None):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
@@ -516,16 +411,15 @@ class PalmAnalysisPipelineCNN:
         
         # Initialize model based on type
         if model_type == 'multiscale':
-            self.model = MultiScaleCNN(in_channels=1).to(self.device)
+            self.model = MultiScaleCNNPredictor(in_channels=1).to(self.device)
         elif model_type == 'efficient':
-            self.model = EfficientPalmCNN(in_channels=1).to(self.device)
+            self.model = EfficientPalmCNNPredictor(in_channels=1).to(self.device)
         elif model_type == 'region':
-            self.model = RegionAwarePalmCNN(in_channels=1).to(self.device)
+            self.model = RegionAwarePalmCNNPredictor(in_channels=1).to(self.device)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
         
         self.processor = PalmLineProcessor()
-        self.interpreter = PalmLineInterpreter()
         
         # Image transformations for grayscale
         self.transform = transforms.Compose([
@@ -539,208 +433,164 @@ class PalmAnalysisPipelineCNN:
                 model_path, map_location=self.device))
             print("Model loaded successfully!")
     
-    def create_dummy_labels(self, num_samples):
-        """Create proper dummy labels"""
-        return {
-            'heart_line': torch.randint(0, 10, (num_samples,)),
-            'head_line': torch.randint(0, 10, (num_samples,)),
-            'life_line': torch.randint(0, 15, (num_samples,)),
-            'fate_line': torch.randint(0, 8, (num_samples,))
-        }
-    
-    def train(self, image_dir, epochs=50, batch_size=8, lr=1e-4):
-        """Train the CNN model on palm images"""
+    def train(self, image_dir, labels_json_path, epochs=50, batch_size=8, lr=1e-4):
+        """Train the CNN model on palm images with real labels"""
         print("🚀 Starting training process...")
         
         try:
-            # Load and prepare data
+            # Load labels
+            labels_dict = load_labels_from_json(labels_json_path)
+            print(f"📊 Loaded labels for {len(labels_dict)} images")
+            
+            # Load image paths
             image_dir_path = Path(image_dir)
-            if not image_dir_path.exists():
-                raise ValueError(f"Image directory not found: {image_dir}")
-            
             image_paths = list(image_dir_path.glob('*.jpg')) + \
-                list(image_dir_path.glob('*.png'))
+                         list(image_dir_path.glob('*.png')) + \
+                         list(image_dir_path.glob('*.jpeg'))
             
             if not image_paths:
-                # Try with different extensions
-                image_paths = list(image_dir_path.glob(
-                    '*.jpeg')) + list(image_dir_path.glob('*.JPG'))
-            
-            if not image_paths:
-                raise ValueError(
-                    f"No images found in {image_dir}. Supported formats: jpg, png, jpeg, JPG")
+                raise ValueError(f"No images found in {image_dir}")
             
             print(f"📁 Found {len(image_paths)} images")
-            print(
-                f"📸 Sample images: {[path.name for path in image_paths[:3]]}")
+            
+            # Filter images that have labels
+            valid_image_paths = []
+            for img_path in image_paths:
+                img_name = os.path.basename(img_path)
+                if img_name in labels_dict:
+                    valid_image_paths.append(img_path)
+            
+            print(f"📈 Images with labels: {len(valid_image_paths)}")
+            
+            if len(valid_image_paths) == 0:
+                raise ValueError("No images with corresponding labels found!")
             
             # Split data
             train_paths, val_paths = train_test_split(
-                image_paths, test_size=0.2, random_state=42)
+                valid_image_paths, test_size=0.2, random_state=42, shuffle=True
+            )
             print(f"📊 Train/Val split: {len(train_paths)}/{len(val_paths)}")
             
-            # Create dummy labels
-            train_labels = self.create_dummy_labels(len(train_paths))
-            val_labels = self.create_dummy_labels(len(val_paths))
-            
             # Create datasets
-            train_dataset = PalmLineDataset(
-                train_paths, train_labels, transform=self.transform)
-            val_dataset = PalmLineDataset(
-                val_paths, val_labels, transform=self.transform)
+            train_dataset = PalmScoreDataset(
+                train_paths, labels_dict, transform=self.transform, is_training=True
+            )
+            val_dataset = PalmScoreDataset(
+                val_paths, labels_dict, transform=self.transform, is_training=True
+            )
             
             # Create data loaders
             train_loader = DataLoader(
-                train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+                train_dataset, batch_size=batch_size, shuffle=True, num_workers=0
+            )
             val_loader = DataLoader(
-                val_dataset, batch_size=batch_size, num_workers=0)
+                val_dataset, batch_size=batch_size, num_workers=0
+            )
             
             # Optimizer and loss
             optimizer = torch.optim.AdamW(
-                self.model.parameters(), lr=lr, weight_decay=0.01)
-            criterion = nn.CrossEntropyLoss()
+                self.model.parameters(), lr=lr, weight_decay=0.01
+            )
+            criterion = nn.MSELoss()  # Use MSE for regression
             
             # Learning rate scheduler
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                optimizer, T_0=10, T_mult=2)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode='min', factor=0.5, patience=5, verbose=True
+            )
             
             print("🎯 Starting training loop...")
             
-            # Training variables
             best_val_loss = float('inf')
             train_losses = []
             val_losses = []
             
-            # Training loop
             for epoch in range(epochs):
                 self.model.train()
                 total_loss = 0
                 batch_count = 0
                 
-                for batch_idx, batch_data in enumerate(train_loader):
-                    # Unpack the data correctly
-                    if isinstance(batch_data, (list, tuple)) and len(batch_data) == 2:
-                        images, labels = batch_data
-                    else:
-                        print(
-                            f"❌ Unexpected batch data format: {type(batch_data)}")
-                        continue
-                    
-                    # Move to device
+                for batch_idx, (images, labels) in enumerate(train_loader):
                     images = images.to(self.device)
-                    labels = {k: v.to(self.device) for k, v in labels.items()}
+                    labels = labels.to(self.device)
                     
                     # Forward pass
-                    outputs = self.model(images)
+                    predictions = self.model(images)
                     
-                    # Calculate multi-task loss
-                    loss = (criterion(outputs['heart_line'], labels['heart_line']) +
-                          criterion(outputs['head_line'], labels['head_line']) +
-                          criterion(outputs['life_line'], labels['life_line']) +
-                          criterion(outputs['fate_line'], labels['fate_line'])) / 4
+                    # Calculate loss
+                    loss = criterion(predictions, labels)
                     
                     # Backward pass
                     optimizer.zero_grad()
                     loss.backward()
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                    torch.nn.utils.clip_grad_norm_(
+                        self.model.parameters(), max_norm=1.0)
                     optimizer.step()
                     
                     total_loss += loss.item()
                     batch_count += 1
                     
-                    if batch_idx % 5 == 0:  # Print more frequently
+                    if batch_idx % 5 == 0:
                         print(
                             f'Epoch {epoch+1}, Batch {batch_idx}, Loss: {loss.item():.4f}')
                 
-                if batch_count > 0:
-                    avg_train_loss = total_loss / batch_count
-                    train_losses.append(avg_train_loss)
-                else:
-                    avg_train_loss = 0
-                    train_losses.append(0)
-                    print("⚠️  No batches processed this epoch")
+                # Average training loss
+                avg_train_loss = total_loss / batch_count if batch_count > 0 else 0
+                train_losses.append(avg_train_loss)
                 
                 # Validation
                 self.model.eval()
                 val_loss = 0
                 val_batches = 0
-                val_correct = {k: 0 for k in ['heart', 'head', 'life', 'fate']}
-                val_total = 0
                 
                 with torch.no_grad():
-                    for batch_data in val_loader:
-                        if isinstance(batch_data, (list, tuple)) and len(batch_data) == 2:
-                            images, labels = batch_data
-                            images = images.to(self.device)
-                            labels = {k: v.to(self.device)
-                                    for k, v in labels.items()}
-                            
-                            outputs = self.model(images)
-                            loss = (criterion(outputs['heart_line'], labels['heart_line']) +
-                                  criterion(outputs['head_line'], labels['head_line']) +
-                                  criterion(outputs['life_line'], labels['life_line']) +
-                                  criterion(outputs['fate_line'], labels['fate_line'])) / 4
-                            val_loss += loss.item()
-                            val_batches += 1
-                            
-                            # Calculate accuracy for each task
-                            for task, output in outputs.items():
-                                preds = output.argmax(dim=1)
-                                correct = (preds == labels[task]).sum().item()
-                                val_correct[task.split('_')[0]] += correct
-                                val_total += labels[task].size(0)
+                    for images, labels in val_loader:
+                        images = images.to(self.device)
+                        labels = labels.to(self.device)
+                        
+                        predictions = self.model(images)
+                        loss = criterion(predictions, labels)
+                        val_loss += loss.item()
+                        val_batches += 1
                 
                 avg_val_loss = val_loss / val_batches if val_batches > 0 else 0
                 val_losses.append(avg_val_loss)
                 
-                # Calculate accuracy
-                accuracies = {k: (v / (val_total / 4) * 100) if val_total > 0 else 0 
-                            for k, v in val_correct.items()}
+                # Learning rate scheduling
+                scheduler.step(avg_val_loss)
                 
-                print(f'✅ Epoch {epoch+1}/{epochs}, '
-                    f'Train Loss: {avg_train_loss:.4f}, '
-                    f'Val Loss: {avg_val_loss:.4f}')
-                print(f'   Accuracies: Heart: {accuracies["heart"]:.1f}%, '
-                    f'Head: {accuracies["head"]:.1f}%, '
-                    f'Life: {accuracies["life"]:.1f}%, '
-                    f'Fate: {accuracies["fate"]:.1f}%')
-                
-                # Update learning rate
-                scheduler.step()
+                print(
+                    f'✅ Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
                 
                 # Save best model
                 if avg_val_loss < best_val_loss:
                     best_val_loss = avg_val_loss
-                    self.save_model('palm_cnn_best.pth')
+                    self.save_model('palm_cnn_score_best.pth')
                     print(
                         f"💾 New best model saved with val loss: {best_val_loss:.4f}")
                 
-                # Save model every 10 epochs
+                # Save checkpoint every 10 epochs
                 if (epoch + 1) % 10 == 0:
-                    self.save_model(f'palm_cnn_epoch_{epoch+1}.pth')
+                    self.save_model(f'palm_cnn_score_epoch_{epoch+1}.pth')
             
             # Save final model
-            self.save_model('palm_cnn_final.pth')
-            print(
-                "🏁 Training completed! Final model saved as 'palm_cnn_final.pth'")
+            self.save_model('palm_cnn_score_final.pth')
+            print("🏁 Training completed!")
             
             # Print training summary
             print(f"\n📊 Training Summary:")
             print(f"   Final Train Loss: {train_losses[-1]:.4f}")
             print(f"   Final Val Loss: {val_losses[-1]:.4f}")
             print(f"   Best Val Loss: {best_val_loss:.4f}")
-        
+            
         except Exception as e:
             print(f"❌ Training error: {e}")
             import traceback
             traceback.print_exc()
     
-    def analyze_palm(self, image_path):
-        """Analyze a single palm image with detailed interpretations"""
+    def predict_scores(self, image_path):
+        """Predict scores for a single palm image"""
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found: {image_path}")
-        
-        print(f"🔍 Analyzing: {Path(image_path).name}")
         
         # Preprocess image
         original_image = Image.open(image_path).convert('RGB')
@@ -751,65 +601,99 @@ class PalmAnalysisPipelineCNN:
         # Model prediction
         self.model.eval()
         with torch.no_grad():
-            predictions = self.model(input_tensor)
+            scores = self.model(input_tensor)
         
-        # Get interpretations
-        interpretations = self.interpreter.interpret_predictions(predictions)
+        # Convert to dictionary
+        score_dict = {
+            'strength': float(scores[0][0].cpu().numpy()),
+            'romantic': float(scores[0][1].cpu().numpy()),
+            'luck': float(scores[0][2].cpu().numpy()),
+            'potential': float(scores[0][3].cpu().numpy())
+        }
         
         return {
             'image_path': image_path,
-            'predictions': predictions,
-            'interpretations': interpretations,
+            'scores': score_dict,
             'processed_image': processed_image
         }
     
-    def print_analysis_results(self, analysis_result):
-        """Print analysis results in a readable format"""
-        result = analysis_result
-        interpretations = result['interpretations']
+    def evaluate_model(self, image_dir, labels_json_path):
+        """Evaluate model on test set"""
+        # Load labels
+        labels_dict = load_labels_from_json(labels_json_path)
         
-        print("\n" + "="*60)
-        print("🔮 PALM READING ANALYSIS RESULTS (CNN)")
-        print("="*60)
-        print(f"📁 Image: {Path(result['image_path']).name}")
-        print("="*60)
+        # Get all images
+        image_dir_path = Path(image_dir)
+        image_paths = list(image_dir_path.glob('*.jpg')) + \
+                     list(image_dir_path.glob('*.png'))
         
-        for line_type, line_interpretations in interpretations.items():
-            if line_interpretations:  # Only print if there are interpretations
-                line_name = line_type.replace('_', ' ').title()
-                print(f"\n📖 {line_name}:")
-                print("-" * 40)
-                
-                for i, (interpretation, confidence) in enumerate(line_interpretations):
-                    rank_symbol = "🥇" if i == 0 else "🥈" if i == 1 else "🥉"
-                    print(f"{rank_symbol} {interpretation}")
-                    print(f"   Confidence: {confidence}")
-                print()
+        # Filter images with labels
+        test_paths = []
+        true_labels = []
+        
+        for img_path in image_paths:
+            img_name = os.path.basename(img_path)
+            if img_name in labels_dict:
+                test_paths.append(img_path)
+                scores = labels_dict[img_name]
+                true_labels.append([
+                    scores.get('strength', 0.5),
+                    scores.get('romantic', 0.5),
+                    scores.get('luck', 0.5),
+                    scores.get('potential', 0.5)
+                ])
+        
+        print(f"🧪 Evaluating on {len(test_paths)} images...")
+        
+        predictions = []
+        mse_loss = nn.MSELoss()
+        total_loss = 0
+        
+        for i, img_path in enumerate(test_paths):
+            result = self.predict_scores(str(img_path))
+            pred_scores = list(result['scores'].values())
+            true_scores = true_labels[i]
+            
+            # Calculate loss
+            pred_tensor = torch.tensor(pred_scores, dtype=torch.float32)
+            true_tensor = torch.tensor(true_scores, dtype=torch.float32)
+            loss = mse_loss(pred_tensor, true_tensor)
+            total_loss += loss.item()
+            
+            predictions.append({
+                'image': os.path.basename(img_path),
+                'predicted': result['scores'],
+                'true': {
+                    'strength': true_scores[0],
+                    'romantic': true_scores[1],
+                    'luck': true_scores[2],
+                    'potential': true_scores[3]
+                },
+                'mse': loss.item()
+            })
+        
+        avg_loss = total_loss / len(test_paths) if test_paths else 0
+        print(f"📊 Average MSE Loss: {avg_loss:.4f}")
+        
+        return predictions, avg_loss
     
-    def test_inference(self, image_dir, num_samples=3):
-        """Test inference on sample images from the training set"""
-        print("\n🧪 TESTING INFERENCE ON TRAINING SAMPLES")
+    def print_prediction_results(self, predictions):
+        """Print prediction results in a readable format"""
+        print("\n" + "="*60)
+        print("🔮 PALM SCORE PREDICTION RESULTS (CNN)")
         print("="*60)
         
-        image_paths = list(Path(image_dir).glob('*.jpg')) + \
-            list(Path(image_dir).glob('*.png'))
-        
-        if not image_paths:
-            print("❌ No images found for testing")
-            return
-        
-        # Select random samples for testing
-        test_paths = image_paths[:min(num_samples, len(image_paths))]
-        
-        for i, image_path in enumerate(test_paths):
-            print(f"\n📊 Sample {i+1}/{len(test_paths)}: {image_path.name}")
+        for i, pred in enumerate(predictions):
+            print(f"\n📊 Sample {i+1}: {pred['image']}")
             print("-" * 40)
             
-            try:
-                result = self.analyze_palm(str(image_path))
-                self.print_analysis_results(result)
-            except Exception as e:
-                print(f"❌ Error analyzing {image_path.name}: {e}")
+            for score_type in ['strength', 'romantic', 'luck', 'potential']:
+                pred_val = pred['predicted'][score_type]
+                true_val = pred['true'][score_type]
+                diff = abs(pred_val - true_val)
+                print(f"  {score_type}: {pred_val:.3f} (pred) vs {true_val:.3f} (true) | diff: {diff:.3f}")
+            
+            print(f"  MSE: {pred['mse']:.4f}")
     
     def save_model(self, path):
         """Save trained model"""
@@ -827,10 +711,10 @@ class PalmAnalysisPipelineCNN:
 
 
 def main():
-    """Main function to run CNN-based palm analysis"""
+    """Main function to run CNN-based palm score prediction"""
     
     print("="*60)
-    print("🤖 CNN-BASED PALM LINE ANALYSIS SYSTEM")
+    print("🤖 CNN-BASED PALM SCORE PREDICTION SYSTEM")
     print("="*60)
     
     # Choose model type
@@ -850,59 +734,54 @@ def main():
     print(f"\nUsing {model_type} CNN architecture")
     
     # Initialize pipeline
-    pipeline = PalmAnalysisPipelineCNN(model_type=model_type)
+    pipeline = PalmScorePipelineCNN(model_type=model_type)
     
-    # Train on your palm images
+    # Train on your palm images with real labels
     print("\n" + "="*60)
     print("🎓 TRAINING PHASE")
     print("="*60)
     
     pipeline.train(
-        # image_dir='/Users/jerrylhm/Desktop/Fall 2025-26/COMP4471/COMP4471-PalmAI/output/resized_dataset',
-        image_dir='/home/javan/Desktop/4471/project/COMP4471-PalmAI/data/resized_dataset',
-        epochs=10,  # Can adjust based on needs
-        batch_size=4,
+        image_dir='./data/resized_dataset',
+        labels_json_path='./data/labels.json',
+        epochs=20,
+        batch_size=8,
         lr=1e-4
     )
+    
+    # Evaluate the model
+    print("\n" + "="*60)
+    print("📊 MODEL EVALUATION")
+    print("="*60)
+    
+    predictions, avg_loss = pipeline.evaluate_model(
+        './data/resized_dataset',
+        './data/labels.json'
+    )
+    
+    # Print sample predictions
+    pipeline.print_prediction_results(predictions[:3])
     
     # Test inference on sample images
     print("\n" + "="*60)
     print("🎯 INFERENCE TESTING")
     print("="*60)
     
-    pipeline.test_inference(
-        # '/Users/jerrylhm/Desktop/Fall 2025-26/COMP4471/COMP4471-PalmAI/output/resized_dataset',
-        '/home/javan/Desktop/4471/project/COMP4471-PalmAI/data/resized_dataset',
-        num_samples=3
-    )
+    # Test on a few sample images
+    image_dir = './data/resized_dataset'
+    image_paths = list(Path(image_dir).glob('*.jpg')) + \
+                 list(Path(image_dir).glob('*.png'))
     
-    # Demonstrate loading the saved model and running inference
-    print("\n" + "="*60)
-    print("🔄 TESTING MODEL LOADING AND INFERENCE")
-    print("="*60)
-    
-    # Create a new pipeline instance and load the trained model
-    loaded_pipeline = PalmAnalysisPipelineCNN(model_type=model_type)
-    loaded_pipeline.load_model('palm_cnn_final.pth')
-    
-    # Test inference with the loaded model
-    loaded_pipeline.test_inference(
-        # '/Users/jerrylhm/Desktop/Fall 2025-26/COMP4471/COMP4471-PalmAI/output/resized_dataset',
-        '/home/javan/Desktop/4471/project/COMP4471-PalmAI/data/resized_dataset',
-        num_samples=2
-    )
-    
-    # Compare different model architectures
-    print("\n" + "="*60)
-    print("📊 MODEL COMPARISON")
-    print("="*60)
-    print("CNN architectures provided:")
-    print("1. MultiScaleCNN: Multi-scale feature extraction with attention")
-    print("2. EfficientPalmCNN: EfficientNet-based with pretrained weights")
-    print("3. RegionAwarePalmCNN: Region-specific feature extraction")
-    print("\n✅ Training complete! Models saved as:")
-    print("   - palm_cnn_best.pth (best validation loss)")
-    print("   - palm_cnn_final.pth (final trained model)")
+    if image_paths:
+        test_paths = image_paths[:3]
+        for img_path in test_paths:
+            try:
+                result = pipeline.predict_scores(str(img_path))
+                print(f"\n📁 Image: {os.path.basename(img_path)}")
+                for score_type, score in result['scores'].items():
+                    print(f"  {score_type}: {score:.3f}")
+            except Exception as e:
+                print(f"❌ Error processing {img_path}: {e}")
 
 
 if __name__ == "__main__":
