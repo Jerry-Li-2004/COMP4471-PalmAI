@@ -1,0 +1,34 @@
+============================================================
+TOP 10 WORST PREDICTIONS (Highest MSE)
+============================================================
+
+
+1. IMG_0105_female.jpg
+   MSE: 0.293775
+
+2. IMG_0074_female.jpg
+   MSE: 0.290856
+
+3. IMG_0227_male.jpg
+   MSE: 0.286674
+
+4. IMG_0082_female.jpg
+   MSE: 0.283483
+
+5. IMG_0151_male.jpg
+   MSE: 0.279113
+
+6. IMG_0156_male.jpg
+   MSE: 0.278808
+
+7. IMG_0166_male.jpg
+   MSE: 0.277139
+
+8. IMG_0250_female.jpg
+   MSE: 0.276571
+
+9. IMG_0220_male.jpg
+   MSE: 0.276531
+
+10. IMG_0295_male.jpg
+   MSE: 0.276414
