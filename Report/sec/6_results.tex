@@ -1,4 +1,4 @@
-\section{Results}
+\section{Experiments}
 \label{sec:results}
 
 
@@ -32,5 +32,57 @@ The user may ask further questions and through a chat-like dialogue.
 \end{figure}
 
 
-\subsection{Training Results}
-?????
+\subsection{Alternative Framework Using CNNs}
+
+\subsubsection{Multi-scale Feature Extraction CNN}
+This architecture performs multiple convolutions to extract features at different levels,
+then passes the features through an attention mechanism to focus on important palm line regions,
+and finally fuses the feature outputs to regress to 4 scores.
+The detailed flow is as follows.
+\begin{itemize}
+  \item Initial convolution: 1 channel to 32 channels, kernel size 3, padding 1
+  \item Mid-level features: 32 channels to 64 channels, kernel size 3, padding 1
+  \item High-level features: 64 channels to 128 channels, kernel size 3, padding 1
+  \item Attention (from high-level features): 2D Conv from 256 channels to 1 channel, kernel size 1, padding 0
+  \item Global features (from attended features): 128 channels to 256 channls, kernel size 3, padding 1
+  \item Further upscaling (from high-level features): 128 channels to 256 channls, kernel size 3, padding 1
+  \item Feature fusion: combines further upscaling features and global features
+  \item Regression to 4 scores: linear layers
+  \item ReLU layer to clip values between 0 and 1
+\end{itemize}
+This architecture gave an average MSE loss of 0.0168 on evaluation using 800 images.
+The final training loss was 0.0096, and the best validation loss was 0.0231.
+
+\subsubsection{Transfer Learning CNN}
+This architecture uses a pretrained backbone, either EfficientNet or ResNet, to extract features.
+The extracted features are then flattened and passed through linear layers,
+and finally a regression layer to output to 4 scores.
+A sigmoid activation is used before outputting the scores to clip scores between 0 and 1.
+
+This architecture gave an average MSE loss of 0.0075 on evaluation using 800 images, the best among all CNN architectures tested.
+The final training loss was 0.0063, and the best validation loss was 0.0251.
+
+Since our dataset is rather small and only consists of 1600 images, 
+we find transfer learning to be the most efficient and provides the best results.
+
+\subsubsection{Region-specialized CNN}
+This architecture uses a shared backbone to first extract features,
+then passes the features through 4 parallel branches, each attending to a different palm region,
+and finally concatenates the features from the branches to regress to 4 scores.
+The detailed flow is as follows.
+\begin{itemize}
+  \item Shared backbone: 2D convolutions to 32 then 64 and 128 channels, kernel size 3, padding 1
+  \item Parallel branches:
+  \begin{itemize}
+    \item Attention in each branch: 2D convolution from 128 to 64 then 32 channels, kernel size 1, padding 0
+    \item Region extractor in each branch: 2D convolution from 128 to 64 channels, kernel size 3, padding 1
+  \end{itemize}
+  \item Feature concatenation: linear layer from 64 $\times$ 4 dimensions to 256 dimensions
+  \item Regression to scores: linear layers from 256 dimensions to 128 then 4 dimensions
+  \item ReLU layer to clip values between 0 and 1
+\end{itemize}
+This architecture gave an average MSE loss of 0.0304 on evaluation using 800 images.
+The final training loss was 0.0191, and the best validation loss was 0.0237.
+
+We hypothesize that each palm region has different semantic meanings, hence each gives one score per aspect of life.
+Thus in this architecture, we use parallel convolution operations on each region to extract features and translate those features to scores.
