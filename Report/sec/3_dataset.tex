@@ -24,11 +24,20 @@ In the context of palm segmentation, grayscale images enhance the visibility of 
 By focusing solely on intensity values, we can better highlight the structural features of the palm, which is essential for accurately identifying and isolating it from the hand.
 
 \subsubsection{Black-Hat Morphological Transform}
-The Black-Hat morphological transform is a key preprocessing step for our palm image analysis, defined as \box{BlackHat(I) = Closing(I) - I}. It isolates darker, smaller image structures—primarily palm lines—by subtracting the original image from its morphological closing. This effectively enhances thin, dark creases while suppressing uniform skin texture.
+The Black-Hat morphological transform is a key preprocessing step for our palm image analysis, defined as 
+\begin{equation*}
+\text{BlackHat}(I) = \text{Closing}(I) - I
+\end{equation*}
+It isolates darker, smaller image structures—primarily palm lines—by subtracting the original image from its morphological closing. 
+This effectively enhances thin, dark creases while suppressing uniform skin texture.
 
-This operation provides targeted feature amplification before Vision Transformer (ViT) processing. It increases the signal-to-noise ratio of palm lines, allowing the ViT to focus its attention mechanisms on high-level relationships between enhanced features rather than low-level feature extraction. The transform's illumination robustness also aids in input normalization across varying capture conditions.
+This operation provides targeted feature amplification before Vision Transformer (ViT) processing. 
+It increases the signal-to-noise ratio of palm lines, allowing the ViT to focus its attention mechanisms on high-level relationships between enhanced features 
+rather than low-level feature extraction. The transform's illumination robustness also aids in input normalization across varying capture conditions.
 
-For implementation, the structuring element size is tuned to match typical palm line widths (10-20 pixels). The output is a grayscale, line-enhanced image suitable for standard ViT preprocessing (resizing, patching, projection), foregrounding the geometric information essential for robust palm representation learning.
+For implementation, the structuring element size is tuned to match typical palm line widths (10-20 pixels). 
+The output is a grayscale, line-enhanced image suitable for standard ViT preprocessing (resizing, patching, projection), 
+foregrounding the geometric information essential for robust palm representation learning.
 
 \begin{figure}[t]
   \centering

@@ -1,4 +1,4 @@
-\section{Technical Approach and Model Architecture}
+\section{Methods}
 \label{sec:technical}
 
 \begin{figure}[t]
@@ -14,6 +14,9 @@ The architecture moves beyond a simple feature-to-text model by incorporating a 
 
 
 \subsection{Feature Extraction}
+Input images are first converted to grayscale and denoised with Gaussian blur before edge extraction. 
+The preprocessing module loads an image, converts it from BGR to grayscale, applies a configurable Gaussian blur, 
+and then computes edges using Canny detection, producing an “edge-only” version that is saved per image.
 
 \subsubsection{Preprocessing}
 The pipeline begins by preprocessing the raw palm image to standardize input and highlight regions of interest. 
@@ -27,14 +30,6 @@ This involves:
 
 \subsubsection{Feature Extraction with Hybrid Transformer}
 Instead of a single transformer, we propose a Hybrid Transformer Encoder architecture with the following features, as shown in Figure 6.
-
-\begin{figure}[t]
-  \centering
-   \includegraphics[width=1\linewidth]{Images/hybrid-transformer-1.jpeg}
-
-   \caption{Feature Extraction with Hybrid Transformer.}
-   \label{fig:onecol}
-\end{figure}
 
 \begin{itemize}
     \item \textbf{Shared Backbone}: A Vision Transformer (ViT) backbone first processes the entire preprocessed palm image to generate a global context embedding, represented by the [CLS] token.
