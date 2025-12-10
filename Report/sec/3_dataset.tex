@@ -23,11 +23,12 @@ This technique simplifies the complexity of the image by reducing it from three 
 In the context of palm segmentation, grayscale images enhance the visibility of edges and contours while eliminating color distractions that may not be relevant to the task. 
 By focusing solely on intensity values, we can better highlight the structural features of the palm, which is essential for accurately identifying and isolating it from the hand.
 
-\subsubsection{Histogram of Oriented Gradients (HOG)}
-The Histogram of Oriented Gradients (HOG) is a feature descriptor that captures the distribution of gradient orientations within localized regions of the image. 
-By dividing the image into small cells and computing histograms of gradient directions, HOG provides a robust representation of the palm's shape and structure~\cite{Parulan2024-qo}. 
-This technique is beneficial for palm segmentation as it emphasizes the edges and contours of the palm, making them more distinguishable from the background and the rest of the hand. 
-HOG features are also less sensitive to variations in lighting and small deformations, which enhances the segmentation accuracy and reliability in real-world scenarios.
+\subsubsection{Black-Hat Morphological Transform}
+The Black-Hat morphological transform is a key preprocessing step for our palm image analysis, defined as \box{BlackHat(I) = Closing(I) - I}. It isolates darker, smaller image structures—primarily palm lines—by subtracting the original image from its morphological closing. This effectively enhances thin, dark creases while suppressing uniform skin texture.
+
+This operation provides targeted feature amplification before Vision Transformer (ViT) processing. It increases the signal-to-noise ratio of palm lines, allowing the ViT to focus its attention mechanisms on high-level relationships between enhanced features rather than low-level feature extraction. The transform's illumination robustness also aids in input normalization across varying capture conditions.
+
+For implementation, the structuring element size is tuned to match typical palm line widths (10-20 pixels). The output is a grayscale, line-enhanced image suitable for standard ViT preprocessing (resizing, patching, projection), foregrounding the geometric information essential for robust palm representation learning.
 
 \begin{figure}[t]
   \centering
