@@ -26,25 +26,16 @@ Achieving precise segmentation is essential before we can undertake further anal
 This foundational step ensures that subsequent analysis will be based on accurate and distinct representations of each line.
 
 
-\subsection{Feature Extraction and Text Decoder}
-Following the segmentation of the palm lines, a critical subsequent step involves utilizing a text decoder to meticulously analyze the shapes and other significant characteristics that may influence the analysis. 
-This detailed examination is essential before the data is passed to a large language model for comprehensive interpretation and final analysis.
-
-% \begin{figure}[t]
-%   \centering
-%     \fbox{\rule{0pt}{2in} \rule{0.9\linewidth}{0pt}}
-%    % \includegraphics[width=0.4\linewidth]{sec/palmlines.png}
-
-%    \caption{An example of text output from the text decoder.}
-%    \label{fig:onecol}
-% \end{figure}
-
+\subsection{Feature Extraction and Vision Transformer}
+Following the segmentation of the palm lines, a critical subsequent step involves the extraction of meaningful features from the segmented structures. 
+This is achieved using a Vision Transformer (ViT) backbone. The ViT model meticulously processes the image, capturing detailed information about the shapes, 
+intersections, lengths, and other significant spatial characteristics of the principal and minor lines. This stage transforms the visual data into a structured, high-level feature representation 
+that encodes the essential attributes necessary for palmistry analysis, providing a robust foundation for subsequent interpretation.
 
 \subsection{Quantified Reasoning}
-To enhance the reasoning process and mitigate any uncertainties, it is essential to implement a scoring system for the features identified in the palm lines. 
-This scoring will assess various attributes, such as indicators of luck, health, and other relevant characteristics. 
-By quantifying these features, we can provide a more structured and objective analysis that informs subsequent interpretations and enhances the overall reliability of the insights derived from the palm analysis.
-
+To structure the analysis and mitigate uncertainties, the high-dimensional features extracted by the Vision Transformer are processed for direct numerical inference.
+The final representation is passed through a regression head, which flattens and maps the features to four distinct, continuous-valued scores. These scores correspond to core palmistry dimensions: strength, romantic, luck, and potential.
+This architecture transforms complex visual patterns into a concise, quantitative profile, enabling a structured and objective assessment. The regression-based approach provides a measurable and consistent basis for the subsequent interpretation, grounding the final analysis in a robust, data-driven foundation.
 
 \subsection{Final Analysis}
 After obtaining scores for various attributes and elaborating on the text descriptions of the palm lines, the final and critical step is to generate a comprehensive, user-friendly analysis. 
