@@ -83,7 +83,7 @@ For all CNN architectures trained and tested, the parameters are the same and ar
     \midrule
     Batch size & 8 \\
     Learning rate & $1 \times 10^{-4}$ \\
-    Dropour rate & 0.2 or 0.3 \\
+    Dropout rate & 0.2 or 0.3 \\
     Epochs & 20 \\
     Warmup & 5\% (fast) \\
     Optimizer & AdamW (wd=0.01) \\
@@ -147,7 +147,17 @@ We hypothesize that each palm region has different semantic meanings, hence each
 Thus in this architecture, we use parallel convolution operations on each region to extract features and translate those features to scores.
 
 \subsubsection{Summary of CNN Training}
-
+\begin{center}
+  \begin{tabular}{llll}
+    \hline
+    Architecture & Avg. Loss & Train Loss & Val. Loss \\
+    \hline
+    Multi-scale & 0.0168 & 0.0096 & 0.0231 \\
+    Transfer Learning & 0.0075 & 0.0063 & 0.0251 \\
+    Region-specialized & 0.0304 & 0.0191 & 0.0237 \\
+    \hline
+  \end{tabular}
+\end{center}
 
 \subsection{User Interface}
 We provide a graphical user interface for seamless use of our pipeline, through a web app.
