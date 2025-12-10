@@ -1,36 +1,6 @@
 \section{Experiments}
 \label{sec:results}
 
-
-% \subsection{User Interface}
-% We provide a graphical user interface for seamless use of our pipeline, through a web app.
-% The user first scans their palm using an on-device camera, and will receive predictions in natural language with an LLM.
-% The user may ask further questions and through a chat-like dialogue.
-
-% \begin{figure}[t]
-%   \centering
-%    \includegraphics[width=1\linewidth]{Images/ui_main.png}
-
-%    \caption{Homepage of our web app.}
-%    \label{fig:onecol}
-% \end{figure}
-
-% \begin{figure}[t]
-%   \centering
-%    \includegraphics[width=1\linewidth]{Images/ui_palm.png}
-
-%    \caption{User interface prompting for palm scanning.}
-%    \label{fig:onecol}
-% \end{figure}
-
-% \begin{figure}[t]
-%   \centering
-%    \includegraphics[width=1\linewidth]{Images/ui_chat.png}
-
-%    \caption{Follow-up dialogue with LLM.}
-%    \label{fig:onecol}
-% \end{figure}
-
 \subsection{Vision Transformer for Palm Image Regression}
 
 \subsubsection{Architecture Overview}
@@ -44,27 +14,26 @@ The Vision Transformer (ViT) processes palm images for regression of four scores
 \end{itemize}
 
 \subsubsection{Training Configuration}
-\begin{table}[h]
-\centering
-\begin{tabular}{ll}
-\toprule
-Parameter & Value \\
-\midrule
-Batch size & 8 \\
-Learning rate & $2 \times 10^{-4}$ \\
-Epochs & 80 \\
-Warmup & 5\% (fast) \\
-Optimizer & AdamW (wd=0.01) \\
-Loss & MSE \\
-Scheduler & OneCycleLR \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{center}
+  \begin{tabular}{ll}
+    \toprule
+    Parameter & Value \\
+    \midrule
+    Batch size & 8 \\
+    Learning rate & $2 \times 10^{-4}$ \\
+    Epochs & 80 \\
+    Warmup & 5\% (fast) \\
+    Optimizer & AdamW (wd=0.01) \\
+    Loss & MSE \\
+    Scheduler & OneCycleLR \\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
 \subsubsection{Data Processing}
 \begin{itemize}
     \item \textbf{Augmentation}: Random crop, flip, rotation ($\pm 15^\circ$), color jitter
-    \item \textbf{Normalization}: Mean=0.5, std=0.5
+    \item \textbf{Normalization}: Mean = 0.5, std = 0.5
     \item \textbf{Labels}: JSON parsing with error handling
 \end{itemize}
 
@@ -83,7 +52,7 @@ Training performance is visualized through loss curves showing model convergence
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\textwidth]{Images/vis_training_curves_up.png}
+\includegraphics[width=0.8\textwidth]{Images/vis_training_curves.png}
 \caption{Training curves showing convergence at epoch 45. The model achieved validation loss 0.0186 and MAE 0.1002, indicating effective learning of palm features.}
 \label{fig:training_curves}
 \end{figure}
@@ -157,3 +126,32 @@ The final training loss was 0.0191, and the best validation loss was 0.0237.
 
 We hypothesize that each palm region has different semantic meanings, hence each gives one score per aspect of life.
 Thus in this architecture, we use parallel convolution operations on each region to extract features and translate those features to scores.
+
+\subsection{User Interface}
+We provide a graphical user interface for seamless use of our pipeline, through a web app.
+The user first scans their palm using an on-device camera, and will receive predictions in natural language with an LLM.
+The user may ask further questions and through a chat-like dialogue.
+
+\begin{figure}[t]
+  \centering
+   \includegraphics[width=1\linewidth]{Images/ui_main.png}
+
+   \caption{Homepage of our web app.}
+   \label{fig:onecol}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+   \includegraphics[width=1\linewidth]{Images/ui_palm.png}
+
+   \caption{User interface prompting for palm scanning.}
+   \label{fig:onecol}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+   \includegraphics[width=1\linewidth]{Images/ui_chat.png}
+
+   \caption{Follow-up dialogue with LLM.}
+   \label{fig:onecol}
+\end{figure}
