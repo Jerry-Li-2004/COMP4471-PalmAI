@@ -1,0 +1,160 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdftex 2025.12.4)  10 DEC 2025 12:04
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**Report/main.tex
+(./Report/main.tex
+! Undefined control sequence.
+l.3 \documentclass
+                  [10pt,twocolumn,letterpaper]{article}
+? 
+! Undefined control sequence.
+l.6 \usepackage
+               {cvpr}              % To produce the CAMERA-READY version
+? 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `preamble'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: pdflatex Report/main.tex
+! I can't find file `pdflatex'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! I can't find file `pdflatex'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: X
+! I can't find file `X'.
+l.11 \input{preamble}
+                     
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: 
+! Emergency stop.
+l.11 
+     
+End of file on the terminal!
+
+!  ==> Fatal error occurred, no output PDF file produced!
