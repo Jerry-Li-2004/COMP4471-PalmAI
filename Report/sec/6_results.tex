@@ -140,16 +140,11 @@ This architecture gave an average MSE loss of 0.0168 on evaluation using 800 ima
 The final training loss was 0.0096, and the best validation loss was 0.0231.
 
 \subsubsection{Transfer Learning CNN}
-This architecture uses a pretrained backbone, either EfficientNet or ResNet, to extract features.
-The extracted features are then flattened and passed through linear layers,
-and finally a regression layer to output to 4 scores.
-A sigmoid activation is used before outputting the scores to clip scores between 0 and 1.
+This architecture utilizes a pretrained backbone, either EfficientNet ~\cite{EfficientNet} or ResNet ~\cite{ResNet}, to extract features. The extracted features are subsequently flattened and passed through linear layers, culminating in a regression layer that outputs 4 scores. A sigmoid activation function is applied prior to the final output to constrain the scores within the range of 0 to 1.
 
-This architecture gave an average MSE loss of 0.0075 on evaluation using 800 images, the best among all CNN architectures tested.
-The final training loss was 0.0063, and the best validation loss was 0.0251.
+During evaluation on 800 images, this architecture achieved the best performance among all tested CNN models, attaining an average MSE loss of 0.0075. The final training loss was 0.0063, while the best validation loss reached 0.0251.
 
-Since our dataset is rather small and only consists of 1600 images, 
-we find transfer learning to be the most efficient and provides the best results.
+Given the limited scale of our dataset, comprising only 1,600 images, transfer learning proved to be the most effective approach, yielding optimal results. Specifically, the model was implemented using the ImageNet1K_V1 pretrained weights, with torchvision.models.resnet18 serving as the backbone for the transfer learning procedure.
 
 \subsubsection{Region-specialized CNN}
 This architecture uses a shared backbone to first extract features,
@@ -189,15 +184,6 @@ Thus in this architecture, we use parallel convolution operations on each region
 \subsection{User Interface}
 We provide a graphical user interface for seamless use of our pipeline, through a web app.
 The user first scans their palm using an on-device camera, and will receive predictions in natural language with an LLM.
-% The user may ask further questions and through a chat-like dialogue.
-
-% \begin{figure}[t]
-%   \centering
-%    \includegraphics[width=1\linewidth]{Images/ui_main.png}
-
-%    \caption{Homepage of our web app.}
-%    \label{fig:onecol}
-% \end{figure}
 
 \begin{figure}[t]
   \centering

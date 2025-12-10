@@ -28,7 +28,7 @@ The Black-Hat morphological transform is a key preprocessing step for our palm i
 \begin{equation*}
 \text{BlackHat}(I) = \text{Closing}(I) - I
 \end{equation*}
-It isolates darker, smaller image structures—primarily palm lines—by subtracting the original image from its morphological closing. 
+It isolates darker, smaller image structures—primarily palm lines—by subtracting the original image from its morphological closing ~\cite{opencv_morphological}. 
 This effectively enhances thin, dark creases while suppressing uniform skin texture.
 
 This operation provides targeted feature amplification before Vision Transformer (ViT) processing. 
