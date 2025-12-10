@@ -1,6 +1,32 @@
 \section{Experiments}
 \label{sec:results}
 
+\subsection{Preprocessing}
+
+\subsubsection{Experimental Setup}
+Three datasets were constructed from the same 800 labeled palm images (train/validation split 640/160): 
+\begin{enumerate}
+  \item original images without preprocessing, 
+  \item grayscale+blur preprocessed images, and 
+  \item preprocessed images with edge extraction applied using the Canny-based edge extractor described above. 
+\end{enumerate}
+For all three datasets, the network architecture, optimization settings, and training schedule were kept identical 
+to isolate the effect of the input representation on optimization behavior.
+
+\subsubsection{Convergence Comparison}
+Training and validation losses over 5 epochs were recorded for each dataset and plotted on a single curve for comparison. 
+The original-image setting consistently produced the highest training and validation losses; applying basic preprocessing reduced both losses, 
+while adding edge extraction on top of the preprocessing yielded the lowest losses and the steepest early decrease, 
+indicating faster and more stable convergence. 
+Therefore, subsequent experiments in the paper are conducted using this representation as the default input to the model.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{Images/convergence_comparison.png}
+\caption{Comparison of convegence speeds when using datasets with different preprocessing steps for training.}
+\label{fig:training_curves}
+\end{figure}
+
 \subsection{Vision Transformer for Palm Image Regression}
 
 \subsubsection{Architecture Overview}
@@ -85,7 +111,6 @@ For all CNN architectures trained and tested, the parameters are the same and ar
     Learning rate & $1 \times 10^{-4}$ \\
     Dropout rate & 0.2 or 0.3 \\
     Epochs & 20 \\
-    Warmup & 5\% (fast) \\
     Optimizer & AdamW (wd=0.01) \\
     Loss & MSE \\
     Scheduler & ReduceLROnPlateau \\
