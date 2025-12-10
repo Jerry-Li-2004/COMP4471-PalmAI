@@ -52,7 +52,7 @@ Training performance is visualized through loss curves showing model convergence
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\linewidth]{Images/vis_training_curves.png}
+\includegraphics[width=\linewidth]{Images/vis_training_curves_up.png}
 \caption{Training curves showing convergence at epoch 45. The model achieved validation loss 0.0186 and MAE 0.1002, indicating effective learning of palm features.}
 \label{fig:training_curves}
 \end{figure}
@@ -73,6 +73,25 @@ Training performance is visualized through loss curves showing model convergence
 \end{itemize}
 
 \subsection{Alternative Framework Using CNNs}
+
+\subsubsection{Training Configuration}
+For all CNN architectures trained and tested, the parameters are the same and are listed in the following table.
+\begin{center}
+  \begin{tabular}{ll}
+    \toprule
+    Parameter & Value \\
+    \midrule
+    Batch size & 8 \\
+    Learning rate & $1 \times 10^{-4}$ \\
+    Dropour rate & 0.2 or 0.3 \\
+    Epochs & 20 \\
+    Warmup & 5\% (fast) \\
+    Optimizer & AdamW (wd=0.01) \\
+    Loss & MSE \\
+    Scheduler & ReduceLROnPlateau \\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
 \subsubsection{Multi-scale Feature Extraction CNN}
 This architecture performs multiple convolutions to extract features at different levels,
@@ -111,7 +130,7 @@ then passes the features through 4 parallel branches, each attending to a differ
 and finally concatenates the features from the branches to regress to 4 scores.
 The detailed flow is as follows.
 \begin{itemize}
-  \item Shared backbone: 2D convolutions to 32 then 64 and 128 channels, kernel size 3, padding 1
+  \item Shared backbone: 2D convolutionse to 32 then 64 and 128 channels, kernel size 3, padding 1
   \item Parallel branches:
   \begin{itemize}
     \item Attention in each branch: 2D convolution from 128 to 64 then 32 channels, kernel size 1, padding 0
@@ -126,6 +145,9 @@ The final training loss was 0.0191, and the best validation loss was 0.0237.
 
 We hypothesize that each palm region has different semantic meanings, hence each gives one score per aspect of life.
 Thus in this architecture, we use parallel convolution operations on each region to extract features and translate those features to scores.
+
+\subsubsection{Summary of CNN Training}
+
 
 \subsection{User Interface}
 We provide a graphical user interface for seamless use of our pipeline, through a web app.
