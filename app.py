@@ -35,10 +35,10 @@ def analyze_palm(image_path):
 
     ### still hard coded, replace with model output
     scores = {
-        "strength": round(random.uniform(0.1, 0.9), 2),
-        "romantic": round(random.uniform(0.1, 0.9), 2),
-        "luck": round(random.uniform(0.1, 0.9), 2),
-        "potential": round(random.uniform(0.1, 0.9), 2),
+        "strength": round(random.uniform(0.2, 0.3), 2),
+        "romantic": round(random.uniform(0.8, 0.9), 2),
+        "luck": round(random.uniform(0.6, 0.7), 2),
+        "potential": round(random.uniform(0.1, 0.2), 2),
     }
 
     user_prompt = LLM_INF.get_user_prompt(scores=scores)
